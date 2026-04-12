@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design — Study Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d0d0d;
+    --paper: #f5f0e8;
+    --accent: #c0392b;
+    --accent2: #2c3e7a;
+    --muted: #6b6456;
+    --rule: #d4cec4;
+    --code-bg: #1a1a2e;
+    --code-fg: #e8e0d0;
+    --highlight: #f9e04b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 60px 48px 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 320px; height: 320px;
+    border: 60px solid var(--accent);
+    border-radius: 50%;
+    opacity: 0.15;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: 200px;
+    width: 180px; height: 180px;
+    border: 40px solid var(--accent2);
+    border-radius: 50%;
+    opacity: 0.2;
+  }
+  .header-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 6vw, 72px);
+    font-weight: 900;
+    line-height: 1.05;
+    max-width: 700px;
+  }
+  header p {
+    margin-top: 20px;
+    color: #aaa;
+    max-width: 500px;
+    font-weight: 300;
+    font-size: 16px;
+  }
+
+  /* ── TOC ── */
+  .toc {
+    background: var(--accent2);
+    color: white;
+    padding: 32px 48px;
+  }
+  .toc h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin-bottom: 16px;
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px;
+  }
+  .toc-grid a {
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: color 0.2s;
+  }
+  .toc-grid a:hover { color: var(--highlight); }
+  .toc-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    opacity: 0.5;
+    min-width: 24px;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 32px 80px;
+  }
+
+  /* ── SECTION ── */
+  .section {
+    margin-top: 64px;
+    border-top: 3px solid var(--ink);
+    padding-top: 32px;
+    animation: fadeUp 0.5s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .section-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+  .section h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  /* ── SUBSECTION ── */
+  .sub {
+    margin-top: 32px;
+  }
+  .sub h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--accent2);
+    margin-bottom: 12px;
+    padding-left: 14px;
+    border-left: 3px solid var(--accent2);
+  }
+
+  /* ── PROSE ── */
+  p { margin-bottom: 12px; color: #222; }
+
+  /* ── CONCEPT CARDS ── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .card {
+    background: white;
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--accent2);
+    padding: 18px;
+    border-radius: 2px;
+  }
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+  .card p { font-size: 13.5px; margin: 0; }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; margin-top: 16px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  thead tr {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  thead th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  tbody tr { border-bottom: 1px solid var(--rule); }
+  tbody tr:nth-child(even) { background: rgba(0,0,0,0.02); }
+  td { padding: 10px 14px; vertical-align: top; }
+  td:first-child { font-weight: 500; }
+
+  /* ── CODE BLOCK ── */
+  .code-block {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    padding: 20px 24px;
+    border-radius: 4px;
+    margin-top: 16px;
+    overflow-x: auto;
+    line-height: 1.8;
+  }
+  .code-block .kw { color: #f9e04b; }
+  .code-block .cm { color: #6b7280; }
+  .code-block .str { color: #86efac; }
+  .code-block .num { color: #f9a8d4; }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: #fff8f7;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout.info {
+    border-color: var(--accent2);
+    background: #f0f3ff;
+  }
+  .callout.tip {
+    border-color: #16a34a;
+    background: #f0fdf4;
+  }
+  .callout strong {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: block;
+    margin-bottom: 6px;
+    color: var(--accent);
+  }
+  .callout.info strong { color: var(--accent2); }
+  .callout.tip strong { color: #16a34a; }
+
+  /* ── LIST ── */
+  ul.styled, ol.styled {
+    padding-left: 20px;
+    margin: 10px 0 16px;
+  }
+  ul.styled li, ol.styled li {
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  ul.styled li::marker { color: var(--accent); }
+
+  /* ── FORMULA / DEFINITION ── */
+  .def {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--highlight);
+    color: var(--ink);
+    padding: 3px 8px;
+    font-size: 13px;
+    display: inline-block;
+    margin: 2px 0;
+  }
+
+  /* ── REFERENCES ── */
+  .refs {
+    margin-top: 64px;
+    border-top: 3px solid var(--ink);
+    padding-top: 32px;
+  }
+  .refs h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    margin-bottom: 24px;
+  }
+  .ref-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+  .ref-card {
+    border: 1px solid var(--rule);
+    padding: 16px;
+    background: white;
+  }
+  .ref-type {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .ref-card h4 { font-size: 14px; margin-bottom: 4px; }
+  .ref-card p { font-size: 12.5px; color: var(--muted); margin: 0; }
+  .ref-card a { color: var(--accent2); text-decoration: none; font-size: 12px; }
+  .ref-card a:hover { text-decoration: underline; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--ink);
+    color: #666;
+    text-align: center;
+    padding: 24px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── DIAGRAM ── */
+  .diagram {
+    background: white;
+    border: 1px solid var(--rule);
+    padding: 24px;
+    margin-top: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    overflow-x: auto;
+    white-space: pre;
+    color: #333;
+  }
+
+  /* ── BADGE ── */
+  .badge {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-radius: 2px;
+    margin-right: 4px;
+  }
+  .badge-red { background: #fee2e2; color: #b91c1c; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-yellow { background: #fef9c3; color: #854d0e; }
+
+  @media (max-width: 600px) {
+    header, .toc { padding: 32px 20px; }
+    main { padding: 0 16px 60px; }
+    .cards { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-label">Engineering Study Notes</div>
+  <h1>System Design</h1>
+  <p>A comprehensive reference covering core concepts, patterns, trade-offs, and real-world architectures — with curated resources.</p>
+</header>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h2>Contents</h2>
+  <div class="toc-grid">
+    <a href="#s1"><span class="toc-num">01</span>Fundamentals</a>
+    <a href="#s2"><span class="toc-num">02</span>Scalability</a>
+    <a href="#s3"><span class="toc-num">03</span>Databases</a>
+    <a href="#s4"><span class="toc-num">04</span>Caching</a>
+    <a href="#s5"><span class="toc-num">05</span>Networking & APIs</a>
+    <a href="#s6"><span class="toc-num">06</span>Message Queues</a>
+    <a href="#s7"><span class="toc-num">07</span>Distributed Systems</a>
+    <a href="#s8"><span class="toc-num">08</span>Storage & CDN</a>
+    <a href="#s9"><span class="toc-num">09</span>Design Framework</a>
+    <a href="#s10"><span class="toc-num">10</span>Classic Problems</a>
+    <a href="#refs"><span class="toc-num">★</span>References</a>
+  </div>
+</div>
+
+<main>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- SECTION 1 — FUNDAMENTALS -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<section class="section" id="s1">
+  <div class="section-meta">
+    <span class="section-num">01</span>
+    <h2>Fundamentals</h2>
+  </div>
+  <p>System design starts with understanding what properties a distributed system must balance. There is rarely a single "correct" design — only trade-offs that depend on requirements.</p>
+
+  <div class="sub">
+    <h3>Key Properties</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Availability</div>
+        <p>The fraction of time the system is operational. Measured as "nines": 99.9% = 8.7 hrs downtime/year; 99.99% = 52 min/year.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Reliability</div>
+        <p>The system performs its intended function correctly over time. A system can be available but unreliable (returns wrong results).</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Scalability</div>
+        <p>Ability to handle growing load — more users, requests, or data — without degrading performance.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Maintainability</div>
+        <p>How easy it is for engineers to operate, evolve, and fix the system. Often the most costly long-term factor.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Fault Tolerance</div>
+        <p>The system continues to operate correctly despite partial failures. Achieved via redundancy, replication, and graceful degradation.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Consistency</div>
+        <p>Every read receives the most recent write or an error. Comes in strong, eventual, and causal varieties.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Back-of-the-Envelope Estimation</h3>
+    <p>Always estimate scale before designing. Key numbers every engineer should know:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Operation</th><th>Approx. Latency</th></tr></thead>
+        <tbody>
+          <tr><td>L1 cache reference</td><td>0.5 ns</td></tr>
+          <tr><td>L2 cache reference</td><td>7 ns</td></tr>
+          <tr><td>RAM access</td><td>100 ns</td></tr>
+          <tr><td>SSD random read</td><td>150 µs</td></tr>
+          <tr><td>HDD seek</td><td>10 ms</td></tr>
+          <tr><td>Datacenter RTT</td><td>500 µs</td></tr>
+          <tr><td>Cross-continent RTT</td><td>150 ms</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout info">
+      <strong>Rule of Thumb</strong>
+      1M requests/day ≈ 12 req/sec. Twitter at peak: ~150k tweets/min. YouTube: 500 hours of video uploaded per minute.
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- SECTION 2 — SCALABILITY -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<section class="section" id="s2">
+  <div class="section-meta">
+    <span class="section-num">02</span>
+    <h2>Scalability</h2>
+  </div>
+
+  <div class="sub">
+    <h3>Horizontal vs Vertical Scaling</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Dimension</th><th>Vertical (Scale Up)</th><th>Horizontal (Scale Out)</th></tr></thead>
+        <tbody>
+          <tr><td>Method</td><td>Bigger machine (more CPU/RAM)</td><td>More machines</td></tr>
+          <tr><td>Complexity</td><td>Low — single node</td><td>High — distributed state</td></tr>
+          <tr><td>Limit</td><td>Hardware ceiling exists</td><td>Nearly unlimited</td></tr>
+          <tr><td>Downtime</td><td>Requires restart</td><td>Rolling updates possible</td></tr>
+          <tr><td>Cost</td><td>Expensive at high-end</td><td>Commodity hardware</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Load Balancing</h3>
+    <p>A load balancer distributes incoming requests across a pool of servers. It is the gateway to horizontal scaling.</p>
+    <div class="diagram">Client → [Load Balancer] → Server A
+                      → Server B
+                      → Server C</div>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Round Robin</div>
+        <p>Requests distributed evenly in turn. Simple but ignores server capacity differences.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Least Connections</div>
+        <p>Routes to the server with fewest active connections. Better for long-lived connections.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">IP Hash</div>
+        <p>Client IP determines server. Useful for session stickiness without shared state.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Consistent Hashing</div>
+        <p>Maps keys to a ring. Adding/removing nodes only remaps a small fraction of keys. Essential for distributed caches and DBs.</p>
+      </div>
+    </div>
+    <div class="callout tip">
+      <strong>Tip</strong>
+      Prefer stateless services so any server can handle any request. Externalise session state to Redis or a DB.
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Rate Limiting</h3>
+    <p>Protects services from abuse and runaway clients. Common algorithms:</p>
+    <ul class="styled">
+      <li><strong>Token Bucket</strong> — tokens added at constant rate, consumed per request. Allows bursts.</li>
+      <li><strong>Leaky Bucket</strong> — requests processed at fixed outflow rate. Smooths traffic, rejects overflow.</li>
+      <li><strong>Fixed Window Counter</strong> — count per time window. Simple but has boundary burst issue.</li>
+      <li><strong>Sliding Window Log</strong> — timestamps stored; precise but memory-intensive.</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- SECTION 3 — DATABASES -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<section class="section" id="s3">
+  <div class="section-meta">
+    <span class="section-num">03</span>
+    <h2>Databases</h2>
+  </div>
+
+  <div class="sub">
+    <h3>SQL vs NoSQL</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Attribute</th><th>SQL (Relational)</th><th>NoSQL</th></tr></thead>
+        <tbody>
+          <tr><td>Schema</td><td>Fixed, typed columns</td><td>Flexible / schemaless</td></tr>
+          <tr><td>ACID</td><td>Full ACID support</td><td>Usually eventual consistency</td></tr>
+          <tr><td>Scaling</td><td>Harder to scale out</td><td>Designed for horizontal scale</td></tr>
+          <tr><td>Joins</td><td>Native, performant</td><td>Avoided; denormalise instead</td></tr>
+          <tr><td>Best For</td><td>Complex queries, financial data</td><td>High-throughput, flexible schema</td></tr>
+          <tr><td>Examples</td><td>PostgreSQL, MySQL, SQLite</td><td>MongoDB, Cassandra, DynamoDB, Redis</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>ACID Properties</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Atomicity</div>
+        <p>A transaction is all-or-nothing. If any step fails, the whole transaction rolls back.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Consistency</div>
+        <p>A transaction brings the database from one valid state to another; constraints are never violated.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Isolation</div>
+        <p>Concurrent transactions produce the same result as if they ran sequentially.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Durability</div>
+        <p>Once committed, data survives crashes. Achieved via WAL (Write-Ahead Log).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Indexing</h3>
+    <p>Indexes trade write speed and storage for fast reads. Without an index, every query is a full table scan O(n).</p>
+    <ul class="styled">
+      <li><strong>B-Tree Index</strong> — default in most RDBMS; ideal for range queries and equality</li>
+      <li><strong>Hash Index</strong> — O(1) exact lookups; no range support</li>
+      <li><strong>Composite Index</strong> — index on multiple columns; follow left-prefix rule</li>
+      <li><strong>Covering Index</strong> — index contains all needed columns; query never touches table</li>
+      <li><strong>Full-Text Index</strong> — tokenised text search (e.g., Elasticsearch)</li>
+    </ul>
+    <div class="callout">
+      <strong>Warning</strong>
+      Over-indexing slows writes. Index only columns used in WHERE, JOIN, or ORDER BY clauses under high read load.
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Replication & Sharding</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Primary-Replica</div>
+        <p>One primary handles writes; replicas serve reads. Increases read throughput. Failover: promote a replica.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Multi-Primary</div>
+        <p>Multiple nodes accept writes. Allows geographic distribution. Conflict resolution required.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Horizontal Sharding</div>
+        <p>Data partitioned across multiple DB instances (e.g., users 1–1M on shard A, 1M–2M on shard B). Enables massive scale; cross-shard queries are expensive.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Vertical Sharding</div>
+        <p>Different tables on different databases. Simpler, but limited by table size on each node.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- SECTION 4 — CACHING -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<section class="section" id="s4">
+  <div class="section-meta">
+    <span class="section-num">04</span>
+    <h2>Caching</h2>
+  </div>
+  <p>Caching stores expensive computation results or frequently accessed data in fast memory, reducing latency and database load dramatically.</p>
+
+  <div class="sub">
+    <h3>Cache Patterns</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Cache-Aside (Lazy)</div>
+        <p>App checks cache → miss → reads DB → writes to cache. Cache only populated on demand. Most common pattern.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Read-Through</div>
+        <p>Cache sits in front of DB. On miss, cache itself fetches from DB and stores result. Transparent to app.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Write-Through</div>
+        <p>Every write goes to cache AND DB synchronously. No stale data; higher write latency.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Write-Back (Write-Behind)</div>
+        <p>Writes go to cache only; flushed to DB asynchronously. Low latency writes, risk of data loss on crash.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Eviction Policies</h3>
+    <ul class="styled">
+      <li><strong>LRU (Least Recently Used)</strong> — evicts item not accessed longest. Most commonly used.</li>
+      <li><strong>LFU (Least Frequently Used)</strong> — evicts item accessed fewest times. Better for skewed access patterns.</li>
+      <li><strong>FIFO</strong> — evicts oldest inserted item regardless of use.</li>
+      <li><strong>TTL (Time-To-Live)</strong> — entries expire after fixed duration.</li>
+    </ul>
+  </div>
+
+  <div class="sub">
+    <h3>Cache Problems</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Problem</th><th>Description</th><th>Solution</th></tr></thead>
+        <tbody>
+          <tr><td>Cache Stampede</td><td>Many requests miss at same time after expiry → DB overwhelmed</td><td>Mutex/lock, staggered TTLs, probabilistic early expiry</td></tr>
+          <tr><td>Cache Penetration</td><td>Requests for non-existent keys always miss → DB hit every time</td><td>Cache null results, Bloom filter at gateway</td></tr>
+          <tr><td>Cache Avalanche</td><td>Many keys expire at once → spike on DB</td><td>Jitter on TTL, persistent cache, circuit breaker</td></tr>
+          <tr><td>Hotspot / Hot Key</td><td>Single key gets massive traffic</td><td>Replicate hot key to multiple shards</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- SECTION 5 — NETWORKING & APIs -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<section class="section" id="s5">
+  <div class="section-meta">
+    <span class="section-num">05</span>
+    <h2>Networking & APIs</h2>
+  </div>
+
+  <div class="sub">
+    <h3>API Styles Compared</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Style</th><th>Protocol</th><th>Best For</th><th>Drawback</th></tr></thead>
+        <tbody>
+          <tr><td>REST</td><td>HTTP/1.1+</td><td>Public APIs, CRUD resources</td><td>Over/under-fetching</td></tr>
+          <tr><td>GraphQL</td><td>HTTP</td><td>Flexible frontends, mobile</td><td>Complex caching, N+1 queries</td></tr>
+          <tr><td>gRPC</td><td>HTTP/2</td><td>Internal microservices, high throughput</td><td>Not browser-native, binary</td></tr>
+          <tr><td>WebSocket</td><td>TCP (WS)</td><td>Real-time: chat, games, feeds</td><td>Stateful, harder to scale</td></tr>
+          <tr><td>Webhooks</td><td>HTTP callback</td><td>Event-driven integrations</td><td>Delivery guarantees needed</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>DNS Resolution Flow</h3>
+    <div class="diagram">Browser → Recursive Resolver → Root Nameserver
+                         → TLD Nameserver (.com)
+                         → Authoritative Nameserver
+                         ← IP Address returned
+Browser → IP (cached per TTL)</div>
+    <p style="margin-top:12px">Low DNS TTL = faster propagation; High TTL = better cache hit rate and reduced DNS load.</p>
+  </div>
+
+  <div class="sub">
+    <h3>HTTP Status Codes to Know</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Code</th><th>Meaning</th><th>System Design Context</th></tr></thead>
+        <tbody>
+          <tr><td>200 OK</td><td>Success</td><td>Standard response</td></tr>
+          <tr><td>201 Created</td><td>Resource created</td><td>POST endpoint</td></tr>
+          <tr><td>301 / 302</td><td>Redirect</td><td>URL shortener response</td></tr>
+          <tr><td>400</td><td>Bad request</td><td>Client-side validation failure</td></tr>
+          <tr><td>401 / 403</td><td>Unauth / Forbidden</td><td>Auth gate; 401 = missing, 403 = denied</td></tr>
+          <tr><td>429</td><td>Too Many Requests</td><td>Rate limiter response</td></tr>
+          <tr><td>503</td><td>Service Unavailable</td><td>Circuit breaker open / overload</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- SECTION 6 — MESSAGE QUEUES -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<section class="section" id="s6">
+  <div class="section-meta">
+    <span class="section-num">06</span>
+    <h2>Message Queues & Event Streaming</h2>
+  </div>
+  <p>Asynchronous communication decouples producers from consumers, enabling resilience and independent scaling.</p>
+
+  <div class="sub">
+    <h3>Why Queues?</h3>
+    <ul class="styled">
+      <li><strong>Decoupling</strong> — producer and consumer don't need to know about each other</li>
+      <li><strong>Load levelling</strong> — absorbs traffic bursts; consumer processes at its own pace</li>
+      <li><strong>Durability</strong> — messages persist even if consumer is temporarily down</li>
+      <li><strong>Fan-out</strong> — one event consumed by multiple downstream services</li>
+    </ul>
+  </div>
+
+  <div class="sub">
+    <h3>Key Technologies</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Apache Kafka</div>
+        <p>Distributed log. Topics with partitions. Immutable, replayable. Excellent for event sourcing, analytics pipelines, millions of events/sec.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">RabbitMQ</div>
+        <p>Traditional broker with exchanges and queues. Supports complex routing (topic, direct, fanout). Better for task queues and RPC.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Amazon SQS</div>
+        <p>Managed queue service. Two types: Standard (at-least-once) and FIFO (exactly-once, ordered). Scales automatically.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Redis Pub/Sub</div>
+        <p>In-memory, real-time. Messages not persisted — fire-and-forget. Good for notifications, live scores.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Delivery Semantics</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Semantic</th><th>Description</th><th>Risk</th></tr></thead>
+        <tbody>
+          <tr><td>At-most-once</td><td>Message sent once, may be lost</td><td>Data loss</td></tr>
+          <tr><td>At-least-once</td><td>Message retried until ack; may duplicate</td><td>Duplicate processing</td></tr>
+          <tr><td>Exactly-once</td><td>No loss, no duplicate</td><td>Expensive; requires idempotency + 2PC</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout tip">
+      <strong>Best Practice</strong>
+      Design consumers to be idempotent (safe to call multiple times with same input). This makes at-least-once semantics safe in practice.
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- SECTION 7 — DISTRIBUTED SYSTEMS -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<section class="section" id="s7">
+  <div class="section-meta">
+    <span class="section-num">07</span>
+    <h2>Distributed Systems</h2>
+  </div>
+
+  <div class="sub">
+    <h3>CAP Theorem</h3>
+    <p>A distributed system can guarantee at most <strong>two</strong> of the following three properties simultaneously:</p>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Consistency (C)</div>
+        <p>Every read returns the most recent write or an error. All nodes see the same data at the same time.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Availability (A)</div>
+        <p>Every request receives a response (not necessarily the most recent data). System never rejects requests.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Partition Tolerance (P)</div>
+        <p>System operates despite network partitions (dropped messages between nodes). <em>Always required in practice.</em></p>
+      </div>
+    </div>
+    <div class="callout info">
+      <strong>Key Insight</strong>
+      Network partitions always occur in distributed systems. So you always sacrifice either C or A during a partition. CP systems (e.g. HBase, ZooKeeper) choose accuracy over uptime. AP systems (e.g. Cassandra, DynamoDB) choose uptime over accuracy.
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Consistency Models</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Model</th><th>Guarantee</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td>Strong Consistency</td><td>Read always returns latest write (linearisability)</td><td>Spanner, etcd</td></tr>
+          <tr><td>Sequential Consistency</td><td>Operations in some global sequential order</td><td>Zookeeper</td></tr>
+          <tr><td>Causal Consistency</td><td>Causally related operations seen in order</td><td>MongoDB sessions</td></tr>
+          <tr><td>Eventual Consistency</td><td>Replicas converge given no new updates</td><td>DynamoDB, Cassandra</td></tr>
+          <tr><td>Read-your-writes</td><td>A user always sees their own writes</td><td>Sticky sessions, read-from-primary</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Consensus Algorithms</h3>
+    <p>How distributed nodes agree on a single value despite failures:</p>
+    <ul class="styled">
+      <li><strong>Paxos</strong> — Foundational consensus algorithm. Notoriously hard to implement correctly. Used in Google Spanner, Chubby.</li>
+      <li><strong>Raft</strong> — Designed for understandability. Leader election + log replication. Used in etcd, CockroachDB, TiKV.</li>
+      <li><strong>PBFT</strong> — Byzantine Fault Tolerance; used in blockchain-adjacent systems where nodes may act maliciously.</li>
+    </ul>
+  </div>
+
+  <div class="sub">
+    <h3>Distributed Patterns</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Circuit Breaker</div>
+        <p>Prevents calls to a failing service. States: Closed → Open (on failure threshold) → Half-Open (probe). Popularised by Netflix Hystrix.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Saga Pattern</div>
+        <p>Manages distributed transactions without 2PC. Sequence of local transactions with compensating actions on failure.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Sidecar</div>
+        <p>Deploy helper process alongside each service (e.g., Envoy proxy). Handles logging, auth, tracing without changing app code.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Service Mesh</div>
+        <p>Network of sidecars (Istio, Linkerd). Provides mTLS, retries, observability between microservices automatically.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- SECTION 8 — STORAGE & CDN -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<section class="section" id="s8">
+  <div class="section-meta">
+    <span class="section-num">08</span>
+    <h2>Storage & CDN</h2>
+  </div>
+
+  <div class="sub">
+    <h3>Storage Types</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Type</th><th>Description</th><th>Example</th><th>Use Case</th></tr></thead>
+        <tbody>
+          <tr><td>Block Storage</td><td>Raw volumes; OS sees as disk</td><td>AWS EBS, GCP Persistent Disk</td><td>Databases, OS volumes</td></tr>
+          <tr><td>File Storage</td><td>Hierarchical filesystem</td><td>AWS EFS, NFS</td><td>Shared filesystems, home dirs</td></tr>
+          <tr><td>Object Storage</td><td>Flat key-value for blobs</td><td>AWS S3, GCS</td><td>Media, backups, static assets</td></tr>
+          <tr><td>In-Memory</td><td>RAM; fastest, volatile</td><td>Redis, Memcached</td><td>Caching, sessions, queues</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Content Delivery Networks (CDN)</h3>
+    <p>A CDN is a globally distributed network of edge servers that cache and serve content close to users, reducing latency and origin load.</p>
+    <div class="diagram">User (Pakistan) → [CDN Edge — Dubai]  ← cached CSS/JS/images
+                  ← 10ms latency (not 200ms to US origin)</div>
+    <ul class="styled">
+      <li><strong>Push CDN</strong> — you proactively upload content to CDN. Good for static, predictable content.</li>
+      <li><strong>Pull CDN</strong> — CDN fetches from origin on first request, caches. Simpler but cold misses hit origin.</li>
+      <li><strong>Use for:</strong> Images, video, JS/CSS, static HTML. Not suitable for highly personalised or frequently changing data.</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- SECTION 9 — DESIGN FRAMEWORK -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<section class="section" id="s9">
+  <div class="section-meta">
+    <span class="section-num">09</span>
+    <h2>Design Interview Framework</h2>
+  </div>
+  <p>Use this structured framework for any system design question. Allocate your 45 minutes carefully.</p>
+
+  <div class="sub">
+    <h3>Step-by-Step Process</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Step</th><th>Time</th><th>Key Questions</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Clarify Requirements</td><td>5 min</td><td>Read vs write ratio? DAU? Latency SLA? Consistency needs? Global?</td></tr>
+          <tr><td>2</td><td>Capacity Estimation</td><td>5 min</td><td>QPS, storage/day, bandwidth, peak load × 2–3</td></tr>
+          <tr><td>3</td><td>High-Level Design</td><td>10 min</td><td>Draw boxes: clients, LB, servers, DB, cache, queue, CDN</td></tr>
+          <tr><td>4</td><td>Deep Dive</td><td>15 min</td><td>Most complex component — schema, API, data flow</td></tr>
+          <tr><td>5</td><td>Bottlenecks & Trade-offs</td><td>10 min</td><td>Single points of failure, hot spots, consistency vs availability</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Standard Component Checklist</h3>
+    <ul class="styled">
+      <li>☐ DNS + CDN for static assets</li>
+      <li>☐ Load balancer (L4 or L7)</li>
+      <li>☐ Stateless web servers (horizontally scalable)</li>
+      <li>☐ Primary + read replicas for DB</li>
+      <li>☐ Cache layer (Redis/Memcached)</li>
+      <li>☐ Async processing via message queue</li>
+      <li>☐ Object store for media/blobs (S3)</li>
+      <li>☐ Search index if full-text needed (Elasticsearch)</li>
+      <li>☐ Monitoring + alerting (Prometheus + Grafana)</li>
+      <li>☐ Auth service (JWT / OAuth 2.0)</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- SECTION 10 — CLASSIC DESIGN PROBLEMS -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<section class="section" id="s10">
+  <div class="section-meta">
+    <span class="section-num">10</span>
+    <h2>Classic Design Problems</h2>
+  </div>
+
+  <div class="sub">
+    <h3>URL Shortener (like Bitly)</h3>
+    <p><span class="badge badge-blue">Read-heavy</span> <span class="badge badge-green">Low latency</span></p>
+    <ul class="styled">
+      <li><strong>Key decision:</strong> How to generate short codes? Base62 of auto-increment ID, or random hash with collision check</li>
+      <li><strong>Storage:</strong> SQL or KV store (key = short code, value = long URL)</li>
+      <li><strong>Scaling reads:</strong> Cache frequently accessed short codes in Redis</li>
+      <li><strong>Redirect:</strong> HTTP 301 (permanent, browser caches) vs 302 (temporary, server can track clicks)</li>
+      <li><strong>DB schema:</strong> id, short_code, long_url, user_id, created_at, expiry</li>
+    </ul>
+  </div>
+
+  <div class="sub">
+    <h3>Twitter / Social Feed</h3>
+    <p><span class="badge badge-red">Write-heavy</span> <span class="badge badge-yellow">Fan-out problem</span></p>
+    <ul class="styled">
+      <li><strong>Fan-out on write:</strong> When user tweets, push to all followers' timelines immediately. Fast reads, slow writes. Bad for celebrities (10M followers).</li>
+      <li><strong>Fan-out on read (pull):</strong> On timeline load, fetch tweets from all followed users. Always fresh; heavy on reads.</li>
+      <li><strong>Hybrid:</strong> Push for regular users; pull for celebrities. Twitter uses this.</li>
+      <li><strong>Storage:</strong> Tweets in DB + timeline feeds in Redis (sorted sets by timestamp)</li>
+    </ul>
+  </div>
+
+  <div class="sub">
+    <h3>WhatsApp / Chat System</h3>
+    <p><span class="badge badge-blue">Real-time</span> <span class="badge badge-green">High availability</span></p>
+    <ul class="styled">
+      <li><strong>Connection:</strong> WebSocket for persistent bidirectional connection per client</li>
+      <li><strong>Message flow:</strong> Client A → Chat Server → Message Queue → Chat Server → Client B</li>
+      <li><strong>Offline users:</strong> Messages stored in DB; push notification via APNs/FCM; delivered on reconnect</li>
+      <li><strong>Message ordering:</strong> Logical timestamps / sequence numbers per conversation</li>
+      <li><strong>Read receipts:</strong> Separate lightweight event sent back through same path</li>
+    </ul>
+  </div>
+
+  <div class="sub">
+    <h3>YouTube / Video Platform</h3>
+    <p><span class="badge badge-red">Storage-intensive</span> <span class="badge badge-blue">CDN-dependent</span></p>
+    <ul class="styled">
+      <li><strong>Upload:</strong> Client → Upload Service → Raw Storage (S3) → Transcoding Queue (Kafka) → Transcoder Workers → Multiple resolution outputs → CDN</li>
+      <li><strong>Transcoding:</strong> Convert to multiple resolutions (360p, 720p, 1080p, 4K) and codecs (H.264, VP9)</li>
+      <li><strong>Streaming:</strong> Adaptive bitrate (HLS/DASH) — player selects quality based on bandwidth</li>
+      <li><strong>Metadata:</strong> PostgreSQL for video info; Elasticsearch for search</li>
+    </ul>
+  </div>
+
+  <div class="sub">
+    <h3>Ride-Sharing (Uber-like)</h3>
+    <p><span class="badge badge-yellow">Geospatial</span> <span class="badge badge-green">Real-time matching</span></p>
+    <ul class="styled">
+      <li><strong>Location updates:</strong> Drivers send GPS every 4–5s → Location Service → Redis Geo (sorted set with geohash)</li>
+      <li><strong>Geohash:</strong> Encode lat/lng as string prefix → nearby search becomes string prefix search</li>
+      <li><strong>Matching:</strong> On ride request, find nearest N drivers, send offer to closest available</li>
+      <li><strong>Trip events:</strong> Kafka for ride requested → matched → started → completed</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- REFERENCES -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<section class="refs" id="refs">
+  <h2>References & Resources</h2>
+  <div class="ref-grid">
+    <div class="ref-card">
+      <div class="ref-type">📖 Book</div>
+      <h4>Designing Data-Intensive Applications</h4>
+      <p>Martin Kleppmann — O'Reilly, 2017. The essential reference. Deep dives on storage engines, replication, consistency.</p>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">📖 Book</div>
+      <h4>System Design Interview Vol. 1 & 2</h4>
+      <p>Alex Xu. Interview-focused, covers 30+ real systems with step-by-step breakdown and diagrams.</p>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">🎬 YouTube</div>
+      <h4>ByteByteGo</h4>
+      <p>Alex Xu's channel. Excellent animated explainers. Free on YouTube, newsletter at bytebytego.com.</p>
+      <a href="https://www.youtube.com/@ByteByteGo" target="_blank">youtube.com/@ByteByteGo →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">🎬 YouTube</div>
+      <h4>Gaurav Sen</h4>
+      <p>Deep conceptual explanations of consistent hashing, distributed systems, microservices.</p>
+      <a href="https://www.youtube.com/@gkcs" target="_blank">youtube.com/@gkcs →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">🎬 YouTube</div>
+      <h4>Hussein Nasser</h4>
+      <p>Backend engineering, database internals, proxy servers. Very practical and hands-on.</p>
+      <a href="https://www.youtube.com/@hnasr" target="_blank">youtube.com/@hnasr →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">🌐 Website</div>
+      <h4>High Scalability Blog</h4>
+      <p>Real-world architecture breakdowns of how companies scaled their systems.</p>
+      <a href="http://highscalability.com" target="_blank">highscalability.com →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">📚 Course</div>
+      <h4>Grokking System Design</h4>
+      <p>Educative.io. Structured course covering 20+ systems with interactive diagrams.</p>
+      <a href="https://www.educative.io/courses/grokking-the-system-design-interview" target="_blank">educative.io →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">🌐 GitHub</div>
+      <h4>System Design Primer</h4>
+      <p>Donne Martin's massive open-source repo. 270k+ stars. Covers everything with diagrams.</p>
+      <a href="https://github.com/donnemartin/system-design-primer" target="_blank">github.com/donnemartin →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">📄 Paper</div>
+      <h4>Google Bigtable (2006)</h4>
+      <p>Foundational NoSQL paper describing the storage system behind Google's web indexing.</p>
+      <a href="https://research.google/pubs/bigtable-a-distributed-storage-system-for-structured-data/" target="_blank">research.google →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">📄 Paper</div>
+      <h4>Amazon Dynamo (2007)</h4>
+      <p>Seminal paper on highly available key-value storage. Introduced consistent hashing + vector clocks to mainstream.</p>
+      <a href="https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf" target="_blank">allthingsdistributed.com →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">📄 Paper</div>
+      <h4>Raft Consensus Algorithm</h4>
+      <p>Understandable distributed consensus. Diego Ongaro & John Ousterhout, 2014.</p>
+      <a href="https://raft.github.io/raft.pdf" target="_blank">raft.github.io →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">🌐 Blog</div>
+      <h4>Engineering Blogs</h4>
+      <p>Netflix Tech Blog, Uber Engineering, Discord Blog, Airbnb Engineering — real architecture decisions explained.</p>
+      <a href="https://netflixtechblog.com" target="_blank">netflixtechblog.com →</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  System Design Study Notes &nbsp;·&nbsp; Compiled for personal study &nbsp;·&nbsp; Verify concepts with primary sources
+</footer>
+
+</body>
+</html>

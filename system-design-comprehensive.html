@@ -1,0 +1,2125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design — Comprehensive Study Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0d0d0d;
+  --paper: #f5f0e8;
+  --accent: #c0392b;
+  --accent2: #2c3e7a;
+  --accent3: #1a7a4a;
+  --muted: #6b6456;
+  --rule: #d4cec4;
+  --code-bg: #12121f;
+  --code-fg: #e8e0d0;
+  --highlight: #f9e04b;
+  --warning-bg: #fff8f7;
+  --info-bg: #f0f3ff;
+  --tip-bg: #f0fdf4;
+  --warn-bg: #fffbeb;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.75;
+  font-size: 15px;
+}
+
+/* ── PROGRESS BAR ── */
+#progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px;
+  background: var(--accent); width: 0%; z-index: 999;
+  transition: width 0.1s;
+}
+
+/* ── FLOATING TOC BUTTON ── */
+#toc-toggle {
+  position: fixed; bottom: 28px; right: 28px;
+  background: var(--ink); color: var(--paper);
+  border: none; border-radius: 50%; width: 48px; height: 48px;
+  font-size: 18px; cursor: pointer; z-index: 998;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+#toc-toggle:hover { background: var(--accent); }
+
+/* ── HEADER ── */
+header {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 64px 52px 52px;
+  position: relative;
+  overflow: hidden;
+}
+header::before {
+  content: '';
+  position: absolute; top: -80px; right: -80px;
+  width: 380px; height: 380px;
+  border: 70px solid var(--accent);
+  border-radius: 50%; opacity: 0.12;
+}
+header::after {
+  content: '';
+  position: absolute; bottom: -50px; left: 250px;
+  width: 200px; height: 200px;
+  border: 45px solid var(--accent2);
+  border-radius: 50%; opacity: 0.18;
+}
+.header-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.35em;
+  text-transform: uppercase; color: var(--accent);
+  margin-bottom: 18px;
+}
+header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(38px, 6vw, 76px);
+  font-weight: 900; line-height: 1.03;
+  max-width: 720px;
+}
+header .sub-headline {
+  margin-top: 22px; color: #999;
+  max-width: 560px; font-weight: 300; font-size: 16px;
+}
+.header-stats {
+  display: flex; gap: 32px; margin-top: 32px; flex-wrap: wrap;
+}
+.stat {
+  display: flex; flex-direction: column;
+}
+.stat-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; font-weight: 900; color: var(--accent);
+}
+.stat-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: #666;
+}
+
+/* ── TOC ── */
+.toc {
+  background: var(--accent2);
+  color: white; padding: 36px 52px;
+}
+.toc h2 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.3em;
+  text-transform: uppercase; opacity: 0.55;
+  margin-bottom: 20px;
+}
+.toc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 6px;
+}
+.toc-grid a {
+  color: white; text-decoration: none;
+  font-size: 13px; padding: 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  display: flex; align-items: center; gap: 12px;
+  transition: color 0.2s, padding-left 0.2s;
+}
+.toc-grid a:hover { color: var(--highlight); padding-left: 4px; }
+.toc-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; opacity: 0.45; min-width: 26px;
+}
+
+/* ── MAIN ── */
+main { max-width: 940px; margin: 0 auto; padding: 0 36px 100px; }
+
+/* ── SECTION ── */
+.section {
+  margin-top: 72px;
+  border-top: 3px solid var(--ink);
+  padding-top: 36px;
+}
+.section-meta {
+  display: flex; align-items: baseline; gap: 18px; margin-bottom: 22px;
+}
+.section-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--accent); letter-spacing: 0.1em;
+}
+.section h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 30px; font-weight: 700;
+}
+.section-desc {
+  font-size: 15px; color: #444;
+  max-width: 720px; margin-bottom: 8px;
+  font-style: italic;
+}
+
+/* ── SUBSECTION ── */
+.sub { margin-top: 36px; }
+.sub h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700;
+  color: var(--accent2); margin-bottom: 14px;
+  padding-left: 14px; border-left: 3px solid var(--accent2);
+}
+.sub h4 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 600;
+  margin: 16px 0 8px; color: var(--ink);
+}
+
+/* ── PROSE ── */
+p { margin-bottom: 12px; color: #222; }
+strong { color: var(--ink); }
+
+/* ── CARDS ── */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px; margin-top: 16px;
+}
+.cards-2 { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
+.card {
+  background: white; border: 1px solid var(--rule);
+  border-top: 3px solid var(--accent2);
+  padding: 18px; border-radius: 2px;
+}
+.card.red { border-top-color: var(--accent); }
+.card.green { border-top-color: var(--accent3); }
+.card.yellow { border-top-color: #d97706; }
+.card-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; font-weight: 600; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+}
+.card.green .card-title { color: var(--accent3); }
+.card.yellow .card-title { color: #92400e; }
+.card p { font-size: 13.5px; margin: 0; }
+.card ul { font-size: 13px; padding-left: 16px; margin-top: 6px; }
+.card ul li { margin-bottom: 4px; }
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; margin-top: 16px; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+thead tr { background: var(--ink); color: var(--paper); }
+thead th {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: 0.1em; padding: 10px 14px; text-align: left;
+}
+tbody tr { border-bottom: 1px solid var(--rule); }
+tbody tr:nth-child(even) { background: rgba(0,0,0,0.025); }
+td { padding: 10px 14px; vertical-align: top; }
+td:first-child { font-weight: 500; }
+td code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: #f0ece4; padding: 1px 5px; }
+
+/* ── CODE ── */
+.code-block {
+  background: var(--code-bg); color: var(--code-fg);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12.5px; padding: 22px 26px;
+  border-radius: 4px; margin-top: 14px;
+  overflow-x: auto; line-height: 1.85;
+  border-left: 3px solid var(--accent2);
+}
+.code-block .kw { color: #f9e04b; }
+.code-block .cm { color: #5a6070; font-style: italic; }
+.code-block .str { color: #86efac; }
+.code-block .num { color: #f9a8d4; }
+.code-block .fn { color: #93c5fd; }
+.code-block .op { color: #fb923c; }
+
+/* ── CALLOUTS ── */
+.callout {
+  border-left: 4px solid var(--accent);
+  background: var(--warning-bg);
+  padding: 14px 18px; margin: 16px 0; font-size: 14px;
+  border-radius: 0 4px 4px 0;
+}
+.callout.info { border-color: var(--accent2); background: var(--info-bg); }
+.callout.tip { border-color: var(--accent3); background: var(--tip-bg); }
+.callout.warn { border-color: #d97706; background: var(--warn-bg); }
+.callout strong {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: 0.1em; display: block;
+  margin-bottom: 6px; color: var(--accent);
+}
+.callout.info strong { color: var(--accent2); }
+.callout.tip strong { color: var(--accent3); }
+.callout.warn strong { color: #92400e; }
+
+/* ── LISTS ── */
+ul.styled, ol.styled {
+  padding-left: 22px; margin: 10px 0 16px;
+}
+ul.styled li, ol.styled li {
+  margin-bottom: 7px; font-size: 14px;
+}
+ul.styled li::marker { color: var(--accent); }
+ol.styled li::marker { color: var(--accent2); font-weight: 600; }
+
+/* ── DIAGRAM ── */
+.diagram {
+  background: white; border: 1px solid var(--rule);
+  padding: 24px 28px; margin-top: 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; line-height: 1.9;
+  overflow-x: auto; white-space: pre;
+  color: #333; border-left: 3px solid var(--accent2);
+}
+
+/* ── BADGE ── */
+.badge {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; padding: 2px 8px;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  border-radius: 2px; margin-right: 4px; margin-bottom: 4px;
+}
+.badge-red { background: #fee2e2; color: #b91c1c; }
+.badge-blue { background: #dbeafe; color: #1d4ed8; }
+.badge-green { background: #dcfce7; color: #166534; }
+.badge-yellow { background: #fef9c3; color: #854d0e; }
+.badge-purple { background: #ede9fe; color: #6d28d9; }
+.badge-gray { background: #f3f4f6; color: #374151; }
+
+/* ── STEP LIST ── */
+.steps { counter-reset: step-counter; margin: 16px 0; }
+.step {
+  display: flex; gap: 16px; margin-bottom: 20px;
+  align-items: flex-start;
+}
+.step-num {
+  counter-increment: step-counter;
+  min-width: 36px; height: 36px;
+  background: var(--ink); color: var(--paper);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px; font-weight: 600;
+  flex-shrink: 0; margin-top: 2px;
+}
+.step-num::before { content: counter(step-counter); }
+.step-body h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.step-body p { font-size: 13.5px; margin: 0; color: #444; }
+
+/* ── PRACTICE BOX ── */
+.practice-box {
+  background: var(--ink); color: var(--paper);
+  padding: 24px 28px; margin: 20px 0;
+  border-radius: 4px;
+}
+.practice-box .pb-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; letter-spacing: 0.25em;
+  text-transform: uppercase; color: var(--accent);
+  margin-bottom: 10px;
+}
+.practice-box h4 { font-size: 16px; margin-bottom: 10px; }
+.practice-box p, .practice-box li {
+  font-size: 13.5px; color: #ccc;
+}
+.practice-box ul { padding-left: 18px; }
+.practice-box li { margin-bottom: 5px; }
+
+/* ── TOOL CARD ── */
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px; margin-top: 16px;
+}
+.tool-card {
+  background: white; border: 1px solid var(--rule);
+  padding: 18px; border-radius: 4px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.tool-header { display: flex; align-items: center; gap: 10px; }
+.tool-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--ink); color: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; flex-shrink: 0;
+}
+.tool-name { font-weight: 600; font-size: 14px; }
+.tool-cat {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+.tool-desc { font-size: 13px; color: #444; line-height: 1.6; }
+.tool-link { font-size: 12px; }
+.tool-link a { color: var(--accent2); text-decoration: none; }
+.tool-link a:hover { text-decoration: underline; }
+
+/* ── THINKING FRAMEWORK ── */
+.framework-step {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 16px; margin-bottom: 24px;
+  align-items: start;
+}
+.fs-num {
+  width: 48px; height: 48px;
+  background: var(--accent);
+  color: white; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 900;
+  flex-shrink: 0;
+}
+.fs-body h4 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.fs-body p { font-size: 13.5px; color: #444; margin-bottom: 6px; }
+.fs-example {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; background: #f0ece4;
+  padding: 8px 12px; border-radius: 2px;
+  color: #555; margin-top: 6px;
+  border-left: 3px solid var(--accent);
+}
+
+/* ── REFS ── */
+.refs { margin-top: 72px; border-top: 3px solid var(--ink); padding-top: 36px; }
+.refs h2 { font-family: 'Playfair Display', serif; font-size: 30px; margin-bottom: 28px; }
+.ref-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.ref-card { border: 1px solid var(--rule); padding: 16px; background: white; border-radius: 2px; }
+.ref-type { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.ref-card h4 { font-size: 14px; margin-bottom: 4px; }
+.ref-card p { font-size: 12.5px; color: var(--muted); margin: 0 0 6px; }
+.ref-card a { color: var(--accent2); text-decoration: none; font-size: 12px; }
+.ref-card a:hover { text-decoration: underline; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--ink); color: #555;
+  text-align: center; padding: 28px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; letter-spacing: 0.1em;
+}
+
+/* ── TIMELINE ── */
+.timeline { margin: 20px 0; }
+.tl-item { display: flex; gap: 16px; margin-bottom: 0; }
+.tl-line-wrap { display: flex; flex-direction: column; align-items: center; }
+.tl-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0; margin-top: 6px;
+}
+.tl-line { width: 2px; flex: 1; background: var(--rule); margin: 4px 0; min-height: 24px; }
+.tl-content { padding-bottom: 24px; flex: 1; }
+.tl-content h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.tl-content p { font-size: 13px; color: #555; margin: 0; }
+.tl-item:last-child .tl-line { display: none; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  header, .toc { padding: 32px 20px; }
+  main { padding: 0 16px 60px; }
+  .cards, .tool-grid, .ref-grid { grid-template-columns: 1fr; }
+  .cards-2 { grid-template-columns: 1fr; }
+  .framework-step { grid-template-columns: 40px 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<button id="toc-toggle" onclick="document.querySelector('.toc').scrollIntoView({behavior:'smooth'})" title="Back to contents">☰</button>
+
+<!-- ══════ HEADER ══════ -->
+<header>
+  <div class="header-label">Engineering Study Notes — v2.0</div>
+  <h1>System Design</h1>
+  <p class="sub-headline">Comprehensive notes covering core concepts, distributed patterns, thinking frameworks, tooling, practice strategies, and real-world architectures — with curated references.</p>
+  <div class="header-stats">
+    <div class="stat"><span class="stat-num">15</span><span class="stat-label">Sections</span></div>
+    <div class="stat"><span class="stat-num">50+</span><span class="stat-label">Concepts</span></div>
+    <div class="stat"><span class="stat-num">30+</span><span class="stat-label">Tools Listed</span></div>
+    <div class="stat"><span class="stat-num">12</span><span class="stat-label">Design Problems</span></div>
+  </div>
+</header>
+
+<!-- ══════ TOC ══════ -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <div class="toc-grid">
+    <a href="#s1"><span class="toc-num">01</span>Fundamentals & Estimation</a>
+    <a href="#s2"><span class="toc-num">02</span>Scalability</a>
+    <a href="#s3"><span class="toc-num">03</span>Databases</a>
+    <a href="#s4"><span class="toc-num">04</span>Caching</a>
+    <a href="#s5"><span class="toc-num">05</span>Networking & APIs</a>
+    <a href="#s6"><span class="toc-num">06</span>Message Queues</a>
+    <a href="#s7"><span class="toc-num">07</span>Distributed Systems</a>
+    <a href="#s8"><span class="toc-num">08</span>Storage & CDN</a>
+    <a href="#s9"><span class="toc-num">09</span>Microservices</a>
+    <a href="#s10"><span class="toc-num">10</span>Security & Auth</a>
+    <a href="#s11"><span class="toc-num">11</span>Observability</a>
+    <a href="#s12"><span class="toc-num">12</span>Classic Design Problems</a>
+    <a href="#s13"><span class="toc-num">13</span>Design Interview Framework</a>
+    <a href="#s14"><span class="toc-num">14</span>Thinking & Articulation</a>
+    <a href="#s15"><span class="toc-num">15</span>How to Practice</a>
+    <a href="#s16"><span class="toc-num">16</span>Tooling Ecosystem</a>
+    <a href="#refs"><span class="toc-num">★</span>References</a>
+  </div>
+</div>
+
+<main>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S1 — FUNDAMENTALS -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s1">
+  <div class="section-meta"><span class="section-num">01</span><h2>Fundamentals & Estimation</h2></div>
+  <p class="section-desc">Before designing anything, understand the properties you're optimising for and estimate the scale you're working at. Numbers ground your decisions.</p>
+
+  <div class="sub">
+    <h3>The Core Properties</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Availability</div>
+        <p>% uptime. 99.9% ("three nines") = 8.77 hrs downtime/year. 99.99% = 52 min/year. 99.999% = 5.26 min/year. SLAs are commitments; SLOs are internal targets; SLIs are actual measurements.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Reliability</div>
+        <p>Performs correctly, not just responds. A service returning stale data is available but not reliable. MTBF (Mean Time Between Failures) and MTTR (Mean Time To Recovery) are key metrics.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Scalability</div>
+        <p>Handles growing load without degrading. Define your load parameters first: RPS, concurrent users, data volume, read/write ratio. Twitter handles ~6k tweets/sec average, 150k at peak.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Consistency</div>
+        <p>All nodes agree on the same data. Strong consistency = every read sees latest write. Eventual = replicas converge over time. The right model depends on the business (bank balance vs likes count).</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Durability</div>
+        <p>Committed data survives crashes. Achieved via WAL (Write-Ahead Logs), replication, and periodic snapshots. S3 offers 99.999999999% (11 nines) durability.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Latency vs Throughput</div>
+        <p>Latency = time for one request. Throughput = requests/second. Often a trade-off. Batching improves throughput but increases latency. Target both P50 and P99 latencies.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Numbers Every Engineer Should Know</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Operation</th><th>Latency</th><th>Intuition</th></tr></thead>
+        <tbody>
+          <tr><td>L1 cache access</td><td>0.5 ns</td><td>1 step across a room</td></tr>
+          <tr><td>L2 cache access</td><td>7 ns</td><td>14 steps</td></tr>
+          <tr><td>RAM read</td><td>100 ns</td><td>200 steps across a field</td></tr>
+          <tr><td>SSD random read (4K)</td><td>150 µs</td><td>Drive to the corner store</td></tr>
+          <tr><td>HDD seek + read</td><td>10 ms</td><td>A walk around the block</td></tr>
+          <tr><td>Same datacenter RTT</td><td>0.5 ms</td><td>Ping next building</td></tr>
+          <tr><td>Cross-continent (US↔EU)</td><td>150 ms</td><td>Speed of light delay</td></tr>
+          <tr><td>Reading 1 MB from RAM</td><td>250 µs</td><td>—</td></tr>
+          <tr><td>Reading 1 MB from SSD</td><td>1 ms</td><td>4× slower than RAM</td></tr>
+          <tr><td>Reading 1 MB from disk</td><td>20 ms</td><td>80× slower than RAM</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout info">
+      <strong>Key Takeaway</strong>
+      RAM is ~10,000× faster than disk. Network within a datacenter is ~1,000× faster than cross-continent. These gaps inform every caching and replication decision you make.
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Back-of-Envelope: Twitter Example</h3>
+    <p>Given: 300M monthly users, 50% daily active = 150M DAU. Each user reads 100 tweets/day, posts 1 tweet every 2 days.</p>
+    <div class="code-block">
+<span class="cm">// Write QPS</span>
+<span class="fn">tweet_writes</span>  = 150M users × (1 tweet / 2 days) / 86400s
+               = <span class="num">~870 writes/sec</span>   (peak × 3 = ~2,500/sec)
+
+<span class="cm">// Read QPS</span>
+<span class="fn">timeline_reads</span> = 150M × 100 / 86400s
+               = <span class="num">~174,000 reads/sec</span>  (peak × 3 = ~500,000/sec)
+
+<span class="cm">// Read:Write ratio = ~200:1 — heavily read-dominated</span>
+<span class="cm">// Decision: optimise for reads, cache timelines aggressively</span>
+
+<span class="cm">// Storage</span>
+<span class="fn">tweet_size</span>     = 64 bytes (id) + 140 bytes (text) + metadata = ~300 bytes
+<span class="fn">storage_per_day</span>= 870/sec × 86400s × 300 bytes = <span class="num">~22.6 GB/day</span>
+<span class="fn">per_year</span>       = 22.6 GB × 365 = <span class="num">~8 TB/year</span>  (before replication)
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S2 — SCALABILITY -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s2">
+  <div class="section-meta"><span class="section-num">02</span><h2>Scalability</h2></div>
+  <p class="section-desc">Scalability is about how your system behaves as load grows. The goal is to add resources in proportion to load without redesigning the system.</p>
+
+  <div class="sub">
+    <h3>Horizontal vs Vertical Scaling</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Attribute</th><th>Vertical (Scale Up)</th><th>Horizontal (Scale Out)</th></tr></thead>
+        <tbody>
+          <tr><td>Method</td><td>Bigger machine (more CPU/RAM)</td><td>More machines of same type</td></tr>
+          <tr><td>Complexity</td><td>Simple — no distributed concerns</td><td>Complex — must handle distributed state</td></tr>
+          <tr><td>Ceiling</td><td>Hardware limit exists (~96 cores)</td><td>Nearly unlimited (Google has millions of servers)</td></tr>
+          <tr><td>Downtime</td><td>Requires restart to resize</td><td>Rolling deploys; zero downtime</td></tr>
+          <tr><td>Failure</td><td>Single point of failure</td><td>Partial failure tolerance</td></tr>
+          <tr><td>Cost curve</td><td>Superlinear — 2× RAM costs 4×</td><td>Linear — commodity hardware</td></tr>
+          <tr><td>Real example</td><td>Early Instagram: one fat Postgres</td><td>Airbnb: thousands of identical app nodes</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Load Balancing Deep Dive</h3>
+    <p>A load balancer distributes traffic across a server pool. It can operate at Layer 4 (TCP) or Layer 7 (HTTP, aware of content).</p>
+    <div class="diagram">                 ┌─────────────────────────────────────────┐
+                 │           LOAD BALANCER                 │
+                 │  Health checks every 5s                 │
+                 │  Removes unhealthy servers              │
+                 └──────┬─────────────┬───────────┬────────┘
+                        │             │           │
+                   [Server A]   [Server B]   [Server C]
+                   sessions:5   sessions:2   sessions:8
+                   ← LC routes new req to Server B ──────→</div>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Round Robin</div>
+        <p>Requests go to each server in turn: A → B → C → A... Best when servers are identical and requests are homogeneous.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Weighted Round Robin</div>
+        <p>Assign weights by capacity. Server with 2× RAM gets 2× requests. Used when servers have different specs.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Least Connections</div>
+        <p>Route to server with fewest active connections. Best for long-lived connections (WebSocket, streaming).</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Consistent Hashing</div>
+        <p>Hash(key) maps to a point on a ring. Each server owns an arc. Adding a server only remaps ~1/n keys. Essential for caches (Redis cluster, Cassandra).</p>
+      </div>
+      <div class="card red">
+        <div class="card-title">IP / URL Hash</div>
+        <p>Same client always goes to same server. Enables sticky sessions without shared store. Risk: hot spots if one client is very active.</p>
+      </div>
+      <div class="card green">
+        <div class="card-title">Random</div>
+        <p>Statistically balanced without state. Good for short-lived stateless requests. AWS ALB uses weighted random by default.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Rate Limiting</h3>
+    <p>Protect services from abuse, ensure fair use, and prevent cascade failures. Implemented at API gateway or per-service.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Algorithm</th><th>How it Works</th><th>Burst Allowed?</th><th>Use When</th></tr></thead>
+        <tbody>
+          <tr><td>Token Bucket</td><td>Bucket holds N tokens, refills at rate R. Each request consumes 1 token.</td><td>Yes (up to bucket size)</td><td>Most APIs — allows bursty traffic</td></tr>
+          <tr><td>Leaky Bucket</td><td>Requests enter queue, processed at fixed rate. Overflow is dropped.</td><td>No — strictly smooth</td><td>Payment systems, smooth traffic</td></tr>
+          <tr><td>Fixed Window</td><td>Count per time window (e.g., 100 req/min). Resets at boundary.</td><td>2× burst at boundary</td><td>Simple quota enforcement</td></tr>
+          <tr><td>Sliding Window Log</td><td>Store timestamp of each request. Count within rolling window.</td><td>Precise no-burst</td><td>Accurate enforcement, high memory</td></tr>
+          <tr><td>Sliding Window Counter</td><td>Blend current + previous window weighted by position.</td><td>Approximate</td><td>Best balance of accuracy vs memory</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout tip">
+      <strong>Real World</strong>
+      GitHub API: 5,000 req/hour per token (token bucket). Twitter API: 300 req/15 min (fixed window). Stripe: 100 req/sec (token bucket with burst). Return HTTP 429 with Retry-After header.
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Auto-Scaling</h3>
+    <p>Automatically add or remove servers based on metrics. Cloud providers (AWS, GCP, Azure) all offer managed auto-scaling groups.</p>
+    <ul class="styled">
+      <li><strong>Reactive scaling</strong> — trigger on CPU &gt; 70% for 5 min. Lag means brief overload before new instances are warm.</li>
+      <li><strong>Predictive scaling</strong> — ML predicts load (e.g., scale up at 8 AM before morning traffic). AWS now offers this natively.</li>
+      <li><strong>Schedule-based</strong> — scale up Friday evenings, down weekday nights. Known traffic patterns (e-commerce flash sales).</li>
+      <li>Always define scale-in slowly (to avoid thrashing) and scale-out aggressively.</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S3 — DATABASES -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s3">
+  <div class="section-meta"><span class="section-num">03</span><h2>Databases</h2></div>
+  <p class="section-desc">Database choice is often the most consequential decision in a system. Understand the trade-offs before committing — migrations are expensive.</p>
+
+  <div class="sub">
+    <h3>SQL vs NoSQL</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Attribute</th><th>SQL (Relational)</th><th>NoSQL</th></tr></thead>
+        <tbody>
+          <tr><td>Schema</td><td>Fixed, enforced by DB</td><td>Flexible, app-enforced</td></tr>
+          <tr><td>Transactions</td><td>Full ACID</td><td>Varies (Mongo 4.0+ has multi-doc ACID)</td></tr>
+          <tr><td>Scaling</td><td>Vertical primary; sharding complex</td><td>Designed for horizontal scale</td></tr>
+          <tr><td>Joins</td><td>Native; performant with indexes</td><td>Avoid; denormalise data</td></tr>
+          <tr><td>Query language</td><td>SQL — expressive, standardised</td><td>Varies by DB</td></tr>
+          <tr><td>Best for</td><td>Complex queries, financial, relational data</td><td>High-write, flexible schema, huge scale</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn">
+      <strong>Common Mistake</strong>
+      Defaulting to NoSQL for "scale" without considering that most products never exceed what a well-tuned PostgreSQL cluster can handle (millions of req/day). Instagram ran on Postgres for years at massive scale.
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>NoSQL Database Types</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Key-Value Store</div>
+        <p><strong>Examples:</strong> Redis, DynamoDB, Riak<br>
+        Fast O(1) lookup by key. No complex queries. Best for: sessions, caches, user preferences, shopping carts.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Document Store</div>
+        <p><strong>Examples:</strong> MongoDB, CouchDB, Firestore<br>
+        JSON/BSON documents, flexible schema. Good for: user profiles, content management, catalogs with varying attributes.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Wide-Column</div>
+        <p><strong>Examples:</strong> Cassandra, HBase, BigTable<br>
+        Rows + dynamic columns. Optimised for time-series, write-heavy. Good for: IoT, analytics, activity feeds. Cassandra handles 1M writes/sec.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Graph DB</div>
+        <p><strong>Examples:</strong> Neo4j, Neptune, JanusGraph<br>
+        Nodes + edges + properties. Relationships are first-class. Good for: social graphs, fraud detection, recommendation engines.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Time-Series DB</div>
+        <p><strong>Examples:</strong> InfluxDB, TimescaleDB, Prometheus<br>
+        Optimised for timestamp-indexed data. Automatic downsampling and retention. Good for: metrics, monitoring, IoT sensor data.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Search Engine</div>
+        <p><strong>Examples:</strong> Elasticsearch, OpenSearch, Solr<br>
+        Inverted index, full-text search, fuzzy matching, aggregations. Not a primary DB — sync from main DB via events.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Indexing</h3>
+    <p>Without an index, every query is a full table scan O(n). With an index, it's O(log n) for B-Tree or O(1) for hash.</p>
+    <div class="code-block">
+<span class="cm">-- Without index: full scan of 10M rows</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> orders <span class="kw">WHERE</span> user_id = <span class="num">42</span>;   <span class="cm">-- scans ALL rows</span>
+
+<span class="cm">-- With B-Tree index: log(10M) ≈ 23 comparisons</span>
+<span class="kw">CREATE INDEX</span> idx_orders_user <span class="kw">ON</span> orders(user_id);
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> orders <span class="kw">WHERE</span> user_id = <span class="num">42</span>;   <span class="cm">-- ~23 comparisons</span>
+
+<span class="cm">-- Composite index: column order matters! Left-prefix rule</span>
+<span class="kw">CREATE INDEX</span> idx_comp <span class="kw">ON</span> orders(user_id, created_at);
+<span class="cm">-- ✅ WHERE user_id = 42                (uses index)</span>
+<span class="cm">-- ✅ WHERE user_id = 42 AND created_at > '2024-01-01' (uses index)</span>
+<span class="cm">-- ❌ WHERE created_at > '2024-01-01'   (skips user_id prefix, full scan)</span>
+    </div>
+    <ul class="styled">
+      <li><strong>B-Tree</strong> — default; great for range queries, equality, ORDER BY</li>
+      <li><strong>Hash</strong> — O(1) equality only; no range support</li>
+      <li><strong>GIN (Generalized Inverted Index)</strong> — arrays, JSONB, full-text search in Postgres</li>
+      <li><strong>Partial Index</strong> — index only rows matching a condition: <code>WHERE status = 'active'</code></li>
+      <li><strong>Covering Index</strong> — includes all SELECT columns; never touches heap table</li>
+    </ul>
+  </div>
+
+  <div class="sub">
+    <h3>Replication Strategies</h3>
+    <div class="cards cards-2">
+      <div class="card">
+        <div class="card-title">Single-Leader (Primary-Replica)</div>
+        <p>One primary accepts all writes. Changes replicated to read replicas. Replicas can serve reads, offloading the primary. Used by: most RDBMS, Redis Sentinel.</p>
+        <ul>
+          <li><strong>Sync replication:</strong> write confirmed when replica acknowledges — no data loss, but latency doubles</li>
+          <li><strong>Async replication:</strong> write confirmed immediately — fast, but replica lag means potential data loss on failover</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">Multi-Leader</div>
+        <p>Multiple nodes accept writes. Each replicates to others. Needed for multi-datacenter active-active. Used by: CouchDB, Google Docs real-time sync.</p>
+        <ul>
+          <li>Write conflicts must be resolved (LWW, CRDTs, custom merge)</li>
+          <li>Complex to reason about; avoid if possible</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">Leaderless (Dynamo-style)</div>
+        <p>Any node accepts reads/writes. Uses quorum: write to W nodes, read from R nodes. If W+R &gt; N, you have strong consistency.</p>
+        <ul>
+          <li>Cassandra default: N=3, W=1, R=1 (eventual consistency)</li>
+          <li>Strong consistency: N=3, W=2, R=2 (quorum)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">Sharding (Partitioning)</div>
+        <p>Split data across multiple DB instances. Each shard is an independent DB holding a subset of data.</p>
+        <ul>
+          <li><strong>Range sharding:</strong> user A-M on shard 1, N-Z on shard 2. Risk: hot shards</li>
+          <li><strong>Hash sharding:</strong> hash(user_id) mod N. Even distribution but no range queries</li>
+          <li><strong>Directory-based:</strong> lookup service maps key to shard. Flexible but adds a hop</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Database Selection Guide</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Need</th><th>Best Choice</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>User accounts, orders, payments</td><td>PostgreSQL / MySQL</td><td>ACID, joins, complex queries</td></tr>
+          <tr><td>Session store, rate limiting</td><td>Redis</td><td>In-memory, O(1), TTL support</td></tr>
+          <tr><td>Product catalog, CMS</td><td>MongoDB</td><td>Flexible schema, nested docs</td></tr>
+          <tr><td>Social graph, recommendations</td><td>Neo4j / Neptune</td><td>Graph traversals are native</td></tr>
+          <tr><td>Write-heavy IoT / activity logs</td><td>Cassandra</td><td>1M+ writes/sec, no single point of failure</td></tr>
+          <tr><td>Full-text search, autocomplete</td><td>Elasticsearch</td><td>Inverted index, relevance scoring</td></tr>
+          <tr><td>Metrics, monitoring dashboards</td><td>InfluxDB / Prometheus</td><td>Built-in downsampling, fast range queries</td></tr>
+          <tr><td>Data warehouse, analytics</td><td>BigQuery / Redshift / Snowflake</td><td>Columnar, massively parallel</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S4 — CACHING -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s4">
+  <div class="section-meta"><span class="section-num">04</span><h2>Caching</h2></div>
+  <p class="section-desc">Caching is the single highest-leverage optimisation in distributed systems. A well-placed cache can reduce DB load by 90%+.</p>
+
+  <div class="sub">
+    <h3>Cache Hierarchy</h3>
+    <div class="diagram">Client Browser Cache   → (miss) →
+  CDN Edge Cache       → (miss) →
+    API Gateway Cache  → (miss) →
+      App-Level Cache  → (miss) →
+        Redis / Memcached → (miss) →
+          Database</div>
+    <p style="margin-top:12px">Each layer should only be needed when the layer above it misses. A well-tuned system sees 90%+ of traffic absorbed by CDN + Redis.</p>
+  </div>
+
+  <div class="sub">
+    <h3>Cache Patterns</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Cache-Aside (Lazy)</div>
+        <p>App checks cache → miss → reads DB → writes cache → returns. Cache only contains accessed data. Most common. <strong>Risk:</strong> stale data if DB updated without invalidating cache.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Read-Through</div>
+        <p>Cache is the only data source from app's perspective. On miss, cache itself fetches and caches. Transparent to app. Used by: AWS ElastiCache with DAX.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Write-Through</div>
+        <p>Every write goes to cache AND DB synchronously. No stale data ever. Write latency doubles. Good for: user preferences, settings (infrequent writes, frequent reads).</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Write-Behind (Write-Back)</div>
+        <p>Write to cache, return immediately, flush to DB asynchronously. Low write latency. Risk: data loss if cache crashes before flush. Good for: likes/views counters, analytics.</p>
+      </div>
+      <div class="card red">
+        <div class="card-title">Refresh-Ahead</div>
+        <p>Cache proactively refreshes entries before they expire, based on predicted access patterns. Complex but eliminates cold misses for hot items. Used by: Netflix for content metadata.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Cache Problems & Solutions</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Problem</th><th>Description</th><th>Real Example</th><th>Solutions</th></tr></thead>
+        <tbody>
+          <tr><td>Cache Stampede</td><td>Many requests miss simultaneously after TTL expiry → DB flooded</td><td>Reddit front page after a popular post's cache expires</td><td>Mutex/lock on miss, probabilistic early expiry, background refresh</td></tr>
+          <tr><td>Cache Penetration</td><td>Requests for keys that will never exist in DB (e.g., invalid IDs) → always miss cache, always hit DB</td><td>Attacker querying random non-existent user IDs</td><td>Cache null results with short TTL, Bloom filter at gateway</td></tr>
+          <tr><td>Cache Avalanche</td><td>Many keys expire at same time → large spike on DB</td><td>Black Friday: product catalog cache all set to 1-hour TTL at deploy time</td><td>Jitter on TTL (±20%), persistent cache (no global TTL), staggered deploys</td></tr>
+          <tr><td>Hot Key</td><td>One key gets massive traffic (e.g., a celebrity's profile)</td><td>Justin Bieber problem on Twitter</td><td>Replicate hot key across N cache nodes, local in-process cache for ultra-hot keys</td></tr>
+          <tr><td>Cache Inconsistency</td><td>Cache and DB diverge — stale reads</td><td>User changes name but sees old name for 10 min</td><td>Write-through, event-driven invalidation, shorter TTL, version keys</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Redis Data Structures (with Use Cases)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Structure</th><th>Operations</th><th>Use Case</th></tr></thead>
+        <tbody>
+          <tr><td><code>String</code></td><td>GET, SET, INCR, EXPIRE</td><td>Sessions, counters, simple cache, rate limit counters</td></tr>
+          <tr><td><code>Hash</code></td><td>HGET, HSET, HMGET</td><td>User profile fields, product attributes</td></tr>
+          <tr><td><code>List</code></td><td>LPUSH, RPOP, LRANGE</td><td>Activity feed, job queues, chat history</td></tr>
+          <tr><td><code>Set</code></td><td>SADD, SISMEMBER, SUNION</td><td>Unique visitors, tags, friends list</td></tr>
+          <tr><td><code>Sorted Set (ZSet)</code></td><td>ZADD, ZRANGE, ZRANGEBYSCORE</td><td>Leaderboards, rate limiting (sliding window), priority queues</td></tr>
+          <tr><td><code>Bitmap</code></td><td>SETBIT, GETBIT, BITCOUNT</td><td>Daily active users, feature flags per user (512MB = 4B users)</td></tr>
+          <tr><td><code>HyperLogLog</code></td><td>PFADD, PFCOUNT</td><td>Approximate unique counts with &lt;1% error, tiny memory (12KB for any cardinality)</td></tr>
+          <tr><td><code>Geo</code></td><td>GEOADD, GEORADIUS</td><td>Nearby drivers, location search</td></tr>
+          <tr><td><code>Stream</code></td><td>XADD, XREAD, XGROUP</td><td>Event log, lightweight Kafka alternative</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S5 — NETWORKING & APIS -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s5">
+  <div class="section-meta"><span class="section-num">05</span><h2>Networking & APIs</h2></div>
+
+  <div class="sub">
+    <h3>API Design Patterns Compared</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Style</th><th>Protocol</th><th>Payload</th><th>Best For</th><th>Avoid When</th></tr></thead>
+        <tbody>
+          <tr><td>REST</td><td>HTTP/1.1+</td><td>JSON/XML</td><td>Public APIs, simple CRUD, well-understood semantics</td><td>Need real-time; complex nested queries</td></tr>
+          <tr><td>GraphQL</td><td>HTTP</td><td>JSON</td><td>Mobile clients (minimise bytes), flexible frontends, aggregating multiple APIs</td><td>Simple CRUD; when caching is critical (no GET)</td></tr>
+          <tr><td>gRPC</td><td>HTTP/2</td><td>Protobuf (binary)</td><td>Internal microservices, high throughput, streaming</td><td>Browser clients (needs grpc-web proxy)</td></tr>
+          <tr><td>WebSocket</td><td>TCP upgrade from HTTP</td><td>Any (text/binary)</td><td>Chat, live dashboards, multiplayer games, collaborative editing</td><td>Simple request-response; fire-and-forget</td></tr>
+          <tr><td>Server-Sent Events</td><td>HTTP</td><td>Text</td><td>One-way server push: notifications, live feeds, progress updates</td><td>Bidirectional; binary data</td></tr>
+          <tr><td>Webhooks</td><td>HTTP POST callback</td><td>JSON</td><td>Event notifications to third parties (Stripe payment events, GitHub PR hooks)</td><td>Real-time (client must have public endpoint)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>REST API Best Practices</h3>
+    <div class="code-block">
+<span class="cm">// Resource-oriented URLs — nouns, not verbs</span>
+<span class="str">GET    /users/42</span>            <span class="cm">✅ get user</span>
+<span class="str">POST   /users</span>               <span class="cm">✅ create user</span>
+<span class="str">PUT    /users/42</span>            <span class="cm">✅ replace user (idempotent)</span>
+<span class="str">PATCH  /users/42</span>            <span class="cm">✅ partial update (idempotent)</span>
+<span class="str">DELETE /users/42</span>            <span class="cm">✅ delete user (idempotent)</span>
+<span class="str">GET    /getUserInfo?id=42</span>    <span class="cm">❌ verb in URL, not RESTful</span>
+
+<span class="cm">// Versioning — always version your API</span>
+<span class="str">GET /v1/users/42</span>             <span class="cm">✅ URL versioning (visible, cacheable)</span>
+<span class="str">Accept: application/vnd.api+json; version=2</span>  <span class="cm">header versioning</span>
+
+<span class="cm">// Pagination for list endpoints</span>
+<span class="str">GET /posts?page=2&amp;limit=20</span>   <span class="cm">offset pagination (simple, but expensive on large offsets)</span>
+<span class="str">GET /posts?cursor=abc123&amp;limit=20</span>  <span class="cm">cursor pagination (consistent, scalable)</span>
+
+<span class="cm">// Consistent error responses</span>
+{ <span class="str">"error"</span>: { <span class="str">"code"</span>: <span class="str">"USER_NOT_FOUND"</span>, <span class="str">"message"</span>: <span class="str">"..."</span>, <span class="str">"request_id"</span>: <span class="str">"abc"</span> } }
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Long Polling vs WebSocket vs SSE</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Short Polling</div>
+        <p>Client asks "any updates?" every N seconds. Simple but wasteful — most responses are empty. Good for: email clients checking every 30s.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Long Polling</div>
+        <p>Client asks, server holds connection open until update arrives, then responds. Client immediately re-polls. Simulates push over HTTP. Good for: notifications when WebSocket not available.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">WebSocket</div>
+        <p>Full-duplex persistent TCP connection after HTTP upgrade handshake. Both client and server can send anytime. Best for: chat, games, live collaboration.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Server-Sent Events</div>
+        <p>Server pushes events to client over persistent HTTP GET. One-directional. Automatic reconnection built-in. Good for: Twitter live timeline, sports scores, progress bars.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S6 — MESSAGE QUEUES -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s6">
+  <div class="section-meta"><span class="section-num">06</span><h2>Message Queues & Event Streaming</h2></div>
+  <p class="section-desc">Async communication via queues is the backbone of scalable, resilient systems. It decouples services so they can fail and scale independently.</p>
+
+  <div class="sub">
+    <h3>Why Queues? A Concrete Example</h3>
+    <div class="diagram">WITHOUT QUEUE (synchronous):
+User → API Server → Image Resizer → Email Service → Analytics → DB
+       If any service is slow or down, the whole request fails. User waits 8 seconds.
+
+WITH QUEUE (asynchronous):
+User → API Server → Queue → [Image Resizer]   ← each service picks up when ready
+         ↓             └──→ [Email Service]   ← can retry on failure
+    Responds in &lt;100ms    └──→ [Analytics]    ← can scale independently</div>
+  </div>
+
+  <div class="sub">
+    <h3>Kafka vs RabbitMQ vs SQS</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Feature</th><th>Apache Kafka</th><th>RabbitMQ</th><th>Amazon SQS</th></tr></thead>
+        <tbody>
+          <tr><td>Model</td><td>Distributed log (topics/partitions)</td><td>Traditional broker (exchanges/queues)</td><td>Managed queue service</td></tr>
+          <tr><td>Message retention</td><td>Configurable (days/weeks), replayable</td><td>Until consumed</td><td>14 days max</td></tr>
+          <tr><td>Throughput</td><td>Millions/sec per cluster</td><td>20-50k msg/sec</td><td>Unlimited (managed)</td></tr>
+          <tr><td>Ordering</td><td>Per partition (strict)</td><td>Per queue</td><td>Standard: no; FIFO: yes</td></tr>
+          <tr><td>Routing</td><td>Simple (topic-based)</td><td>Complex (topic, direct, fanout, headers)</td><td>Simple</td></tr>
+          <tr><td>Consumer model</td><td>Pull; consumer groups share partitions</td><td>Push; competing consumers</td><td>Pull; long polling</td></tr>
+          <tr><td>Best for</td><td>Event sourcing, analytics pipelines, audit logs, stream processing</td><td>Task queues, RPC, complex routing, work distribution</td><td>Serverless, AWS ecosystem, simple queuing</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Kafka Deep Dive</h3>
+    <div class="diagram">Topic: "order-events"  (partitioned for parallelism)
+┌─ Partition 0 ──────────────────────────────────────┐
+│  offset: 0   1   2   3   4   5   6   7   8   ...   │  ← append-only log
+└────────────────────────────────────────────────────┘
+┌─ Partition 1 ──────────────────────────────────────┐
+│  offset: 0   1   2   3   4   ...                   │
+└────────────────────────────────────────────────────┘
+
+Producer hashes order_id to pick partition → same order always same partition → ordered per order
+Consumer Group A (payment service): each instance reads 1 partition
+Consumer Group B (analytics service): independent read position, can replay from offset 0</div>
+    <div class="callout tip">
+      <strong>Key Insight</strong>
+      Because Kafka stores messages on disk and tracks only offsets (not message acks), adding a new consumer service can replay ALL historical events. This is the foundation of Event Sourcing — your queue IS your audit log.
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S7 — DISTRIBUTED SYSTEMS -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s7">
+  <div class="section-meta"><span class="section-num">07</span><h2>Distributed Systems</h2></div>
+
+  <div class="sub">
+    <h3>CAP Theorem — The Real Story</h3>
+    <p>During a <strong>network partition</strong> (unavoidable in any distributed system), you must choose:</p>
+    <div class="cards">
+      <div class="card red">
+        <div class="card-title">CP System (Consistent + Partition-Tolerant)</div>
+        <p>Returns error or waits rather than returning stale data. Sacrifices availability. Examples: HBase, ZooKeeper, etcd, MongoDB (in majority). Use when: banking, inventory management (can't oversell).</p>
+      </div>
+      <div class="card green">
+        <div class="card-title">AP System (Available + Partition-Tolerant)</div>
+        <p>Returns best available data (possibly stale). Sacrifices consistency. Examples: Cassandra, CouchDB, DynamoDB (default). Use when: social feeds, shopping carts, DNS — stale data is acceptable.</p>
+      </div>
+    </div>
+    <div class="callout info">
+      <strong>PACELC Extension</strong>
+      CAP only considers behaviour during partitions. PACELC adds: even without partitions, there's a Latency vs Consistency trade-off. DynamoDB: PA/EL (available during partition, low latency else). Spanner: PC/EC (consistent always, at latency cost).
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Distributed Patterns</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Circuit Breaker</div>
+        <p>Prevents calling a failing service. States: <strong>Closed</strong> (normal) → <strong>Open</strong> (fail fast after threshold) → <strong>Half-Open</strong> (probe after timeout). Prevents cascade failures. Used by: Netflix Hystrix, Resilience4j.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Saga Pattern</div>
+        <p>Distributed transactions without 2-Phase Commit. Sequence of local transactions; on failure, run compensating transactions backwards. Two flavours: Choreography (events) or Orchestration (central coordinator).</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Bulkhead</div>
+        <p>Isolate failures like watertight compartments in a ship. Separate thread pools per dependency. If payment service hangs, it doesn't exhaust threads for search service.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Retry with Backoff</div>
+        <p>Retry failed requests with exponential backoff + jitter. Without jitter, all clients retry in sync → stampede. Formula: wait = min(cap, base × 2^attempt) + rand()</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Idempotency Keys</div>
+        <p>Client sends unique key per logical operation. Server deduplicates using the key. Critical for payment APIs — ensures charging once even if request retried. Stripe, PayPal use this.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Outbox Pattern</div>
+        <p>Write to DB and outbox table atomically. Separate process reads outbox and publishes to queue. Guarantees at-least-once message delivery without distributed transactions.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Consistent Hashing — Why It Matters</h3>
+    <div class="diagram">Traditional hash: hash(key) mod N servers
+  Add 1 server: mod 4 instead of 3 → 75% of keys remapped → cache invalidation
+
+Consistent hashing: keys and servers on a ring [0, 2^32)
+  hash("user:42") = 500 → goes to first server clockwise → Server B (at pos 600)
+  Add Server D (at pos 550): only keys between 500 and 550 move to D → ~25% remapped
+  Remove Server B: only its keys move to next server → ~33% remapped (1/N)</div>
+    <p style="margin-top: 10px">Virtual nodes (vnodes): each physical server owns multiple points on the ring. Distributes load evenly even with heterogeneous servers.</p>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S8 — STORAGE & CDN -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s8">
+  <div class="section-meta"><span class="section-num">08</span><h2>Storage & CDN</h2></div>
+
+  <div class="sub">
+    <h3>Storage Types</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Type</th><th>Description</th><th>Example</th><th>Use Case</th><th>Latency</th></tr></thead>
+        <tbody>
+          <tr><td>In-Memory</td><td>RAM, volatile</td><td>Redis, Memcached</td><td>Cache, sessions, real-time leaderboards</td><td>~1 µs</td></tr>
+          <tr><td>Block Storage</td><td>Raw volumes, OS-level</td><td>AWS EBS, GCP PD</td><td>Database storage, OS boot volumes</td><td>~1 ms</td></tr>
+          <tr><td>File Storage (NAS)</td><td>Hierarchical filesystem</td><td>AWS EFS, NFS</td><td>Shared filesystems, CMS media libraries</td><td>~5 ms</td></tr>
+          <tr><td>Object Storage</td><td>Flat key-value for blobs</td><td>AWS S3, GCS, R2</td><td>Media, backups, ML datasets, static assets</td><td>~50-100 ms</td></tr>
+          <tr><td>Cold/Archive</td><td>Tape/glacier, infrequent</td><td>S3 Glacier, GCS Archive</td><td>Compliance backups, audit logs</td><td>Minutes to hours</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>CDN Architecture</h3>
+    <div class="diagram">Origin Server (US-East)
+       ↑ cache miss (rare)
+  ┌────────────────────────────────────┐
+  │     CDN Edge Network               │
+  │  ┌──────────┐  ┌──────────────┐   │
+  │  │ PoP Dubai│  │ PoP Singapore│   │
+  │  │ ~10ms    │  │ ~15ms        │   │
+  │  └──────────┘  └──────────────┘   │
+  └────────────────────────────────────┘
+       ↑ cache hit (~95% of requests)
+  User in Pakistan       User in Malaysia</div>
+    <ul class="styled">
+      <li><strong>What to cache on CDN:</strong> Static assets (JS, CSS, images), HTML for SPAs, video segments, API responses with low variance</li>
+      <li><strong>What NOT to cache:</strong> Personalised responses, payment pages, admin dashboards, frequently changing data</li>
+      <li><strong>Cache-Control headers:</strong> <code>max-age=31536000, immutable</code> for versioned assets; <code>no-cache</code> for HTML</li>
+      <li><strong>Cache invalidation:</strong> Content-hashed filenames (bundle.a3f9b2.js) are infinitely cacheable and invalidate naturally</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S9 — MICROSERVICES -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s9">
+  <div class="section-meta"><span class="section-num">09</span><h2>Microservices Architecture</h2></div>
+  <p class="section-desc">Microservices split a system into small, independently deployable services. Not always better than a monolith — understand the trade-offs.</p>
+
+  <div class="sub">
+    <h3>Monolith vs Microservices</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Dimension</th><th>Monolith</th><th>Microservices</th></tr></thead>
+        <tbody>
+          <tr><td>Deployment</td><td>Deploy everything at once</td><td>Deploy services independently</td></tr>
+          <tr><td>Scaling</td><td>Scale everything or nothing</td><td>Scale only bottleneck services</td></tr>
+          <tr><td>Dev velocity (small team)</td><td>Fast — no network overhead</td><td>Slow — service contracts, infra complexity</td></tr>
+          <tr><td>Dev velocity (large team)</td><td>Slow — merge conflicts, coordination</td><td>Fast — teams own services independently</td></tr>
+          <tr><td>Failure isolation</td><td>One bug can take down everything</td><td>Failures contained to a service</td></tr>
+          <tr><td>Data</td><td>Shared DB — easy joins</td><td>Each service owns its DB — no direct joins</td></tr>
+          <tr><td>Debugging</td><td>Simple — single process</td><td>Hard — distributed traces needed</td></tr>
+          <tr><td>Start with</td><td>Always — extract later if needed</td><td>Only when team/scale demands it</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <strong>Amazon's Rule of Thumb</strong>
+      If a service can't be owned by a team that could be fed by 2 pizzas, it's too big. But also: don't start with microservices. Shopify, Stack Overflow, and GitHub run primarily on monoliths at scale.
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Service Communication</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Synchronous (HTTP/gRPC)</div>
+        <p>Service A calls Service B and waits for response. Simple, easy to reason about. Problem: if B is slow, A is slow. Creates temporal coupling.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Asynchronous (Queue/Events)</div>
+        <p>Service A publishes event. Service B processes when ready. No coupling. Service B can be down and catch up later. Problem: harder to trace, eventual consistency.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Service Mesh (Envoy/Istio)</div>
+        <p>Sidecar proxy handles: mTLS, retries, circuit breaking, distributed tracing, load balancing — transparently without app code changes. Operations team's best friend.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">API Gateway</div>
+        <p>Single entry point: auth, rate limiting, routing, response aggregation, SSL termination. Clients don't need to know internal service topology. Examples: Kong, AWS API Gateway, nginx.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S10 — SECURITY & AUTH -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s10">
+  <div class="section-meta"><span class="section-num">10</span><h2>Security & Authentication</h2></div>
+
+  <div class="sub">
+    <h3>Authentication Patterns</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Session Tokens</div>
+        <p>Server stores session. Client sends session ID cookie. Simple, revocable immediately. Problem: requires shared session store (Redis) for horizontal scaling. Used by: traditional web apps.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">JWT (JSON Web Token)</div>
+        <p>Stateless — server signs payload, no storage needed. Client sends in Authorization header. Problem: can't revoke before expiry without a blocklist. Use short expiry (15 min) + refresh tokens.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">OAuth 2.0</div>
+        <p>Delegated authorization. "Login with Google" flow: user authorises your app to access their Google data. Separate auth server issues tokens. Industry standard for third-party integrations.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">API Keys</div>
+        <p>Long-lived opaque tokens for machine-to-machine auth. Simple, no expiry complexity. Hash before storing (treat like passwords). Rate limit per key. Used by: Stripe, SendGrid, Twilio.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>JWT Flow</h3>
+    <div class="diagram">1. User logs in → server validates credentials
+2. Server signs JWT: Header.Payload.Signature
+   Payload = { user_id: 42, role: "admin", exp: now + 15min }
+   Signature = HMAC_SHA256(base64(header) + "." + base64(payload), SECRET_KEY)
+3. Client stores JWT (memory or httpOnly cookie — NOT localStorage for sensitive apps)
+4. Client sends: Authorization: Bearer eyJhbGci...
+5. Server verifies signature (no DB lookup needed!) and checks exp
+6. Refresh flow: access token (15 min) + refresh token (7 days, stored in DB, revocable)</div>
+  </div>
+
+  <div class="sub">
+    <h3>Security Essentials Checklist</h3>
+    <ul class="styled">
+      <li><strong>Always use HTTPS</strong> — TLS everywhere, including internal services</li>
+      <li><strong>Hash passwords with bcrypt/Argon2</strong> — never SHA1/MD5, never plain text</li>
+      <li><strong>Input validation</strong> — validate server-side, never trust client input</li>
+      <li><strong>SQL injection prevention</strong> — always use parameterised queries, never string concat</li>
+      <li><strong>Rate limiting on auth endpoints</strong> — prevent brute force; lock after N failures</li>
+      <li><strong>Secrets management</strong> — AWS Secrets Manager / Vault; never hardcode in code</li>
+      <li><strong>Principle of least privilege</strong> — DB user only has SELECT on read-only service</li>
+      <li><strong>CSRF protection</strong> — SameSite cookie attribute or CSRF tokens</li>
+    </ul>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S11 — OBSERVABILITY -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s11">
+  <div class="section-meta"><span class="section-num">11</span><h2>Observability & Monitoring</h2></div>
+  <p class="section-desc">You can't fix what you can't see. Observability is the ability to infer internal system state from external outputs.</p>
+
+  <div class="sub">
+    <h3>The Three Pillars</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="card-title">Metrics</div>
+        <p>Aggregated numbers over time. CPU%, RPS, error rate, P99 latency, cache hit rate. Tool: Prometheus (scraping) + Grafana (dashboards). Alert on SLO violations.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Logs</div>
+        <p>Immutable, timestamped event records. Structured logs (JSON) are searchable. Ship to: ELK Stack (Elasticsearch + Logstash + Kibana) or Loki + Grafana. Include request IDs for correlation.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Traces</div>
+        <p>Follow a single request across multiple services. Each span records: service, operation, duration, status, tags. Tool: Jaeger, Zipkin, AWS X-Ray. Critical for diagnosing microservice latency.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Key Metrics to Track</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Category</th><th>Metrics</th><th>Typical Alert Thresholds</th></tr></thead>
+        <tbody>
+          <tr><td>Traffic</td><td>Requests/sec, active connections</td><td>Alert on sudden 2× spike or drop</td></tr>
+          <tr><td>Latency</td><td>P50, P95, P99 response time</td><td>P99 &gt; 500ms for APIs, P99 &gt; 200ms for search</td></tr>
+          <tr><td>Errors</td><td>5xx rate, exception count, failed jobs</td><td>5xx rate &gt; 0.1% of traffic</td></tr>
+          <tr><td>Saturation</td><td>CPU%, memory%, disk%, queue depth</td><td>CPU &gt; 80% sustained, queue &gt; 1M items</td></tr>
+          <tr><td>Database</td><td>Query latency, connection pool usage, replication lag</td><td>Replica lag &gt; 30s, pool usage &gt; 90%</td></tr>
+          <tr><td>Cache</td><td>Hit rate, eviction rate, memory usage</td><td>Hit rate drops below 90%</td></tr>
+          <tr><td>Business</td><td>Orders/min, signups/hour, revenue/min</td><td>50% drop in orders → page on-call</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout tip">
+      <strong>Google's Four Golden Signals</strong>
+      Latency, Traffic, Errors, Saturation (LTES). If you monitor only these four, you'll catch most production incidents.
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S12 — CLASSIC DESIGN PROBLEMS -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s12">
+  <div class="section-meta"><span class="section-num">12</span><h2>Classic Design Problems</h2></div>
+  <p class="section-desc">These are the 12 most commonly asked system design problems. For each, understand the key decisions — not just the answer.</p>
+
+  <div class="sub">
+    <h3>URL Shortener (Bitly)</h3>
+    <p><span class="badge badge-blue">Read: 100:1</span> <span class="badge badge-green">Low latency</span> <span class="badge badge-gray">Write: ~100 URLs/sec</span></p>
+    <div class="diagram">User → [API] → Short Code Generator → DB (shortCode → longURL)
+                 → Cache (Redis: shortCode → longURL, TTL 24h)
+
+GET /abc123 → check Redis → if hit: 302 redirect → if miss: check DB → cache + redirect</div>
+    <ul class="styled">
+      <li><strong>Key design choice:</strong> short code generation. Options: (a) auto-increment ID → base62 encode — simple, sequential but predictable; (b) random UUID → take 7 chars — unpredictable but needs collision check; (c) MD5(longURL) → take 7 chars — deterministic, same URL always same code</li>
+      <li><strong>Schema:</strong> <code>id, short_code (indexed), long_url, user_id, created_at, expires_at, click_count</code></li>
+      <li><strong>Redirect type:</strong> 301 Permanent (browser caches → can't track clicks) vs 302 Temporary (always hits server → track every click) — Bitly uses 302</li>
+      <li><strong>Analytics:</strong> Async — write click events to Kafka, process in batches, store in Cassandra by (short_code, date)</li>
+    </ul>
+  </div>
+
+  <div class="sub">
+    <h3>Twitter / Social Feed</h3>
+    <p><span class="badge badge-red">Fan-out problem</span> <span class="badge badge-yellow">Celebrity edge case</span> <span class="badge badge-blue">Read-heavy</span></p>
+    <div class="diagram">HYBRID APPROACH (Twitter's actual strategy):
+
+Regular user posts tweet:
+  Tweet DB → Fan-out Service → pushes to all followers' timeline caches (Redis)
+  Read: load from user's pre-computed timeline cache → O(1)
+
+Celebrity (10M followers) posts tweet:
+  Tweet DB only (no fan-out — 10M writes would take too long)
+  Read: merge pre-computed timeline + fetch celebrity's recent tweets → O(followers user follows who are celebrities)</div>
+    <ul class="styled">
+      <li><strong>Timeline storage:</strong> Redis Sorted Set per user, score = timestamp, member = tweet_id. Fetch top 200 tweets → hydrate from tweet cache</li>
+      <li><strong>Who is a celebrity?</strong> Threshold: &gt; 1M followers = pull model. Twitter uses ~10K as threshold internally</li>
+      <li><strong>Tweet storage:</strong> MySQL with Vitess sharding (Twitter's actual stack), sharded by tweet_id</li>
+      <li><strong>Media:</strong> Images/videos → S3 → CDN (CloudFront). Never stored in DB.</li>
+    </ul>
+  </div>
+
+  <div class="sub">
+    <h3>WhatsApp / Chat System</h3>
+    <p><span class="badge badge-blue">Real-time</span> <span class="badge badge-green">Offline handling</span> <span class="badge badge-purple">E2E encryption</span></p>
+    <div class="diagram">Online-to-Online:
+  Alice → WebSocket → Chat Server A → Message Queue → Chat Server B → WebSocket → Bob
+
+Offline delivery:
+  Alice → Chat Server A → Message Queue → Storage DB → Push notification (APNs/FCM) → Bob's device
+  Bob comes online → WebSocket connects → fetches queued messages → Server deletes from queue
+
+Group message (100 members):
+  Alice → Chat Server → Fan-out to 100 member message queues (or direct delivery if online)
+  For large groups (1000+): different strategy — pull model on load</div>
+    <ul class="styled">
+      <li><strong>Connection management:</strong> Each user has WebSocket to one Chat Server. Need to know which server holds which user's connection → store in Redis: <code>user_id → server_id</code></li>
+      <li><strong>Read receipts:</strong> Small event sent back through queue: <code>{type: "read", msg_id: X, user_id: Y, ts: T}</code></li>
+      <li><strong>Message ordering:</strong> Logical timestamps / sequence IDs per conversation. Cassandra for message storage: partition key = conversation_id, cluster key = message_id (time-ordered)</li>
+      <li><strong>E2E encryption:</strong> Signal Protocol — keys generated on device, server never sees plaintext</li>
+    </ul>
+  </div>
+
+  <div class="sub">
+    <h3>YouTube / Video Platform</h3>
+    <p><span class="badge badge-red">Storage-heavy</span> <span class="badge badge-blue">Transcoding pipeline</span> <span class="badge badge-green">CDN-delivered</span></p>
+    <div class="diagram">Upload Pipeline:
+User → Resumable Upload API → Raw Storage (S3)
+                             → Kafka: "video.uploaded" event
+                             → Transcoding Workers (pick up from Kafka)
+                               → FFmpeg: 360p, 720p, 1080p, 4K in H.264 + VP9
+                               → Thumbnail generation
+                               → Store outputs → S3
+                               → Kafka: "video.ready" event
+                             → CDN pre-warming (popular content pushed to edge)
+
+Watch Pipeline:
+User requests video → API returns CDN URLs for each quality tier
+Player (HLS/DASH) → picks quality based on bandwidth → requests 2-10s segments from CDN
+                   → segment not in CDN → CDN fetches from S3 → cached for next viewers</div>
+    <ul class="styled">
+      <li><strong>Resumable uploads:</strong> Clients upload in chunks (5MB). Server tracks progress. Failed upload resumes from last chunk. YouTube uses tus protocol.</li>
+      <li><strong>Adaptive bitrate:</strong> HLS/DASH splits video into segments. Manifest file (.m3u8) lists available quality tiers. Player switches dynamically — smooth even on variable connections.</li>
+      <li><strong>View count:</strong> Not real-time. Batch updated from Kafka stream via Flink. Prevents race conditions at scale.</li>
+      <li><strong>Recommendation:</strong> Separate ML service. Reads from Cassandra (watch history) + Redis (trending). Serves pre-computed recommendations.</li>
+    </ul>
+  </div>
+
+  <div class="sub">
+    <h3>Uber / Ride-Sharing</h3>
+    <p><span class="badge badge-yellow">Geospatial</span> <span class="badge badge-blue">Real-time matching</span> <span class="badge badge-green">Event-driven</span></p>
+    <div class="diagram">Driver location updates (every 4s):
+  Driver App → Location Service → Redis GEOADD drivers {lng, lat, driver_id}
+
+Rider requests ride:
+  Rider App → Matching Service → GEORADIUS (find drivers within 2km)
+                              → Score by distance + rating + car type
+                              → Send offer to top 3 drivers via WebSocket
+                              → First to accept → trip created
+                              → Notify rider → track driver on map
+
+Trip events (Kafka):
+  ride.requested → ride.driver_assigned → ride.started → ride.completed → payment.triggered</div>
+    <ul class="styled">
+      <li><strong>Geohash:</strong> Encode (lat, lng) as string. "ww8p1r4t8" → nearby cells share prefix. Range query = prefix search. Redis GEO uses sorted set with geohash score internally.</li>
+      <li><strong>Surge pricing:</strong> Real-time supply/demand ratio per geohash cell. Stream processing on Kafka with Flink.</li>
+      <li><strong>ETA calculation:</strong> Not just distance — real-time traffic data from map service + historical patterns per time of day.</li>
+    </ul>
+  </div>
+
+  <div class="sub">
+    <h3>Google Drive / File Storage</h3>
+    <p><span class="badge badge-blue">Sync across devices</span> <span class="badge badge-green">Deduplication</span> <span class="badge badge-gray">Collaboration</span></p>
+    <div class="diagram">Upload:
+  Client splits file into chunks (4MB each)
+  Hash each chunk (SHA-256): skip if already on server (deduplication)
+  Upload only new chunks → S3
+  Metadata DB: file_id, name, owner, chunks[], version, modified_at
+
+Sync:
+  Client → WebSocket → Notification Service → "file X changed"
+  Client fetches delta: which chunks changed? download only those chunks
+  Local reassembly
+
+Conflict resolution:
+  Dropbox: last-write-wins + keeps conflicted copy (e.g. "file (John's conflicted copy 2024)")
+  Google Docs: OT (Operational Transformation) / CRDT for real-time collaborative editing</div>
+  </div>
+
+  <div class="sub">
+    <h3>Rate Limiter Service</h3>
+    <p><span class="badge badge-blue">Distributed</span> <span class="badge badge-yellow">Token bucket</span></p>
+    <div class="code-block">
+<span class="cm">// Redis-based sliding window rate limiter</span>
+<span class="kw">function</span> <span class="fn">isAllowed</span>(userId, limit=100, windowSecs=60):
+  key = <span class="str">"ratelimit:{userId}"</span>
+  now = currentTimestamp()
+  windowStart = now - windowSecs * <span class="num">1000</span>
+
+  <span class="cm">// Atomic pipeline</span>
+  pipeline = redis.pipeline()
+  pipeline.ZREMRANGEBYSCORE(key, <span class="num">0</span>, windowStart)    <span class="cm">// remove old entries</span>
+  pipeline.ZADD(key, now, now)                       <span class="cm">// add current request</span>
+  pipeline.ZCARD(key)                                <span class="cm">// count requests in window</span>
+  pipeline.EXPIRE(key, windowSecs)                   <span class="cm">// auto-cleanup</span>
+  [_, _, count, _] = pipeline.execute()
+
+  <span class="kw">return</span> count &lt;= limit   <span class="cm">// true = allowed, false = 429</span>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S13 — DESIGN FRAMEWORK -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s13">
+  <div class="section-meta"><span class="section-num">13</span><h2>Design Interview Framework</h2></div>
+  <p class="section-desc">A repeatable process for any design question. Interviewers evaluate your thinking process, not just the final diagram.</p>
+
+  <div class="sub">
+    <h3>The 5-Step Framework (45 minutes)</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Clarify Requirements (5 min)</h4>
+          <p>Never start designing before asking questions. Functional requirements: what does the system DO? Non-functional: scale, latency SLA, availability, consistency needs, geographic distribution?</p>
+          <p><em>Questions to ask:</em> "How many daily active users? What's the read/write ratio? Do we need global distribution? What's the acceptable latency? Does the feed need to be real-time?"</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Capacity Estimation (5 min)</h4>
+          <p>Estimate QPS (write + read), storage per day/year, bandwidth. These numbers drive your architecture choices. Don't skip this — it reveals if you need 1 server or 1,000.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>High-Level Design (10 min)</h4>
+          <p>Draw the major boxes: clients, DNS/CDN, load balancer, app servers, cache, DB, queues, object store. Connect them with arrows and label data flows. Get alignment before diving deep.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Deep Dive (15 min)</h4>
+          <p>Pick the most interesting or complex component. Design the DB schema, API endpoints, or the core algorithm. The interviewer often directs you here. Show depth in the area that matters most.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Scale & Trade-offs (10 min)</h4>
+          <p>Identify bottlenecks. How does the design handle 10× traffic? What are the failure modes? What did you trade off — and why? Great engineers articulate trade-offs, not just solutions.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Standard Component Checklist</h3>
+    <div class="cards">
+      <div class="card green">
+        <div class="card-title">Always Consider</div>
+        <ul>
+          <li>☐ DNS + CDN for static assets</li>
+          <li>☐ Load balancer (L4 or L7)</li>
+          <li>☐ Stateless app servers (scale-out)</li>
+          <li>☐ Primary DB + read replicas</li>
+          <li>☐ Cache layer (Redis)</li>
+          <li>☐ Async queue for heavy tasks</li>
+          <li>☐ Object store for media (S3)</li>
+        </ul>
+      </div>
+      <div class="card yellow">
+        <div class="card-title">Add When Needed</div>
+        <ul>
+          <li>☐ Search index (Elasticsearch)</li>
+          <li>☐ Auth service / API gateway</li>
+          <li>☐ Rate limiter</li>
+          <li>☐ Notification service (push/email)</li>
+          <li>☐ Monitoring (Prometheus + Grafana)</li>
+          <li>☐ Distributed tracing (Jaeger)</li>
+          <li>☐ Feature flags (LaunchDarkly)</li>
+        </ul>
+      </div>
+      <div class="card red">
+        <div class="card-title">Avoid Premature</div>
+        <ul>
+          <li>☐ Microservices for small teams</li>
+          <li>☐ Multiple DB types unless needed</li>
+          <li>☐ Custom consensus algorithms</li>
+          <li>☐ ML pipelines before product-market fit</li>
+          <li>☐ Multi-region before 1M users</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S14 — THINKING & ARTICULATION -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s14">
+  <div class="section-meta"><span class="section-num">14</span><h2>Thinking & Articulation Framework</h2></div>
+  <p class="section-desc">System design is as much about how you think out loud as what you design. This section is about developing the mental models and communication skills that separate great engineers from good ones.</p>
+
+  <div class="sub">
+    <h3>The Mental Model Ladder</h3>
+    <p>Move through these levels for any component you're designing:</p>
+    <div class="framework-step">
+      <div class="fs-num">1</div>
+      <div class="fs-body">
+        <h4>What does it do? (Function)</h4>
+        <p>State the job in one sentence. Don't overcomplicate. If you can't explain it simply, you don't understand it yet.</p>
+        <div class="fs-example">Example: "Redis is an in-memory key-value store. I'm using it as a cache to avoid hitting the DB for user sessions."</div>
+      </div>
+    </div>
+    <div class="framework-step">
+      <div class="fs-num">2</div>
+      <div class="fs-body">
+        <h4>Why this choice? (Trade-offs)</h4>
+        <p>Every choice excludes alternatives. Name what you're trading off. This shows you've thought beyond "I know Redis".</p>
+        <div class="fs-example">Example: "I chose Redis over Memcached because I need sorted sets for the leaderboard feature, not just strings. Memcached would have been simpler for pure caching."</div>
+      </div>
+    </div>
+    <div class="framework-step">
+      <div class="fs-num">3</div>
+      <div class="fs-body">
+        <h4>What breaks at scale? (Failure modes)</h4>
+        <p>Every design has weaknesses. Name them before the interviewer does. This demonstrates systems-level thinking.</p>
+        <div class="fs-example">Example: "Single Redis instance is a SPOF and limited to one machine's RAM. At our scale, I'd shard with Redis Cluster across 6 nodes, giving us failover and ~6× memory."</div>
+      </div>
+    </div>
+    <div class="framework-step">
+      <div class="fs-num">4</div>
+      <div class="fs-body">
+        <h4>What would you change with 10× load? (Evolution path)</h4>
+        <p>Good designs have a clear growth path. You shouldn't need to redesign from scratch to handle more load.</p>
+        <div class="fs-example">Example: "At 10× load, the DB becomes the bottleneck. I'd add read replicas first. At 100×, I'd shard by user_id using consistent hashing. At 1000×, consider a NoSQL migration for the hot path."</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Articulation Patterns to Practice</h3>
+    <div class="cards cards-2">
+      <div class="card">
+        <div class="card-title">The Trade-off Statement</div>
+        <p>"I'm choosing X over Y because our workload is [read/write/latency] heavy. The downside of X is [Z], which I'll mitigate by [solution]. If requirements change towards [different constraint], Y would be better."</p>
+      </div>
+      <div class="card">
+        <div class="card-title">The Scale Escalation</div>
+        <p>"For our initial scale of [N users], [simple solution] works. As we grow to [10N], the bottleneck becomes [component] because [reason]. I'd address that by [next level solution]."</p>
+      </div>
+      <div class="card">
+        <div class="card-title">The Constraint Surfacing</div>
+        <p>"Before I dive in — can I check: is the primary concern here latency, throughput, or consistency? That'll change my approach significantly. For a payment system I'd prioritise consistency; for a social feed I'd accept eventual consistency for lower latency."</p>
+      </div>
+      <div class="card">
+        <div class="card-title">The Failure Acknowledgement</div>
+        <p>"This design has a weakness: [specific failure mode]. In production I'd add [mitigation]. I'm leaving it simplified for now — should I detail the production-grade version?"</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Common Thinking Traps</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Trap</th><th>What It Looks Like</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td>Gold plating</td><td>Designing a Kubernetes cluster with 12 microservices for a URL shortener MVP</td><td>Ask scale first. Match complexity to requirements.</td></tr>
+          <tr><td>Buzzword dropping</td><td>"I'd use blockchain and Kubernetes and Kafka and GraphQL" without reasoning</td><td>Every technology should solve a stated problem. Name the problem first.</td></tr>
+          <tr><td>Skipping the obvious</td><td>Jumping to sharding without considering "can a single Postgres handle this?"</td><td>Start simple. Postgres handles millions of rows fine with good indexing.</td></tr>
+          <tr><td>Ignoring failure modes</td><td>Designing the happy path only</td><td>For every component, ask "what happens when this fails?"</td></tr>
+          <tr><td>Premature optimisation</td><td>"We'll need CDN, multi-region, eventual consistency..." for day-1 product</td><td>Design for current scale, show awareness of future scaling steps.</td></tr>
+          <tr><td>Silent designing</td><td>Drawing boxes without explaining why</td><td>Think out loud. Narrate your decisions. The interviewer evaluates process, not just output.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Building Intuition: The 5-Whys Drill</h3>
+    <p>When you encounter any design decision, drill into the "why" five levels deep. This builds permanent mental models:</p>
+    <div class="practice-box">
+      <div class="pb-label">Example Drill</div>
+      <h4>"Why does Uber use consistent hashing for driver location?"</h4>
+      <ul>
+        <li>Why 1: To distribute driver keys across multiple Redis nodes.</li>
+        <li>Why 2: Because one Redis instance can't hold 5M driver locations.</li>
+        <li>Why 3: Because RAM is finite and ~1M drivers × 100 bytes = 100MB — easily fits. But they want horizontal scale too.</li>
+        <li>Why 4: Because consistent hashing means adding a new node only remaps 1/N drivers, not all of them.</li>
+        <li>Why 5: Because if adding a node invalidated all keys, you'd get a thundering herd hitting the DB during scaling events — exactly when you need stability most.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S15 — HOW TO PRACTICE -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s15">
+  <div class="section-meta"><span class="section-num">15</span><h2>How to Practice System Design</h2></div>
+  <p class="section-desc">Deliberate practice beats passive reading. Here's a structured roadmap from beginner to advanced.</p>
+
+  <div class="sub">
+    <h3>Learning Roadmap</h3>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-line-wrap"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div class="tl-content">
+          <h4>Month 1 — Foundations</h4>
+          <p>Read DDIA Chapters 1–6 (storage, encoding, replication, partitioning). Design a URL shortener and a key-value store from scratch. Watch ByteByteGo's fundamentals playlist. Build latency intuition.</p>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-line-wrap"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div class="tl-content">
+          <h4>Month 2 — Core Systems</h4>
+          <p>Design Twitter, WhatsApp, and YouTube. Read Dynamo and Bigtable papers. Study consistent hashing, CAP theorem, and caching patterns deeply. Start mock interviews with peers.</p>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-line-wrap"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div class="tl-content">
+          <h4>Month 3 — Advanced Patterns</h4>
+          <p>Read DDIA Chapters 7–12 (transactions, distributed systems). Design Google Drive, Uber, and a search engine. Study Raft consensus. Read Netflix/Discord/Airbnb engineering blogs.</p>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-line-wrap"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div class="tl-content">
+          <h4>Month 4+ — Mastery</h4>
+          <p>Design novel systems (TypeAhead/Autocomplete, Notification Service, Ad Click Aggregator). Do 2 timed mock interviews/week. Read primary sources: papers, engineering blogs. Teach concepts to others.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Weekly Practice Template</h3>
+    <div class="practice-box">
+      <div class="pb-label">Recommended Weekly Routine</div>
+      <h4>5 hours/week split</h4>
+      <ul>
+        <li><strong>Monday (1 hr):</strong> Read one chapter of DDIA or one engineering blog post. Take notes.</li>
+        <li><strong>Wednesday (1.5 hr):</strong> Design one system from scratch. Timer = 45 min. Then compare to reference solution.</li>
+        <li><strong>Friday (1 hr):</strong> Mock interview with a peer. One person designs, one asks clarifying questions.</li>
+        <li><strong>Weekend (1.5 hr):</strong> Deep dive into one component from the week's design (e.g., how does Redis cluster work internally?).</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>The Solo Practice Loop</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Pick a system</h4>
+          <p>Use this list: URL Shortener → KV Store → Twitter → Pastebin → Instagram → WhatsApp → Uber → YouTube → Google Drive → TypeAhead → Notification Service → Web Crawler → Distributed Cache</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Set a 45-minute timer and design without references</h4>
+          <p>Use Excalidraw or paper. Write out your requirements, estimation, high-level design, and one deep dive. Narrate out loud as if in an interview. This is uncomfortable — that's the point.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Compare with the reference solution</h4>
+          <p>ByteByteGo, Alex Xu's book, or Grokking. Note every component you missed or over-engineered. Write down 3 specific gaps.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Deep dive one gap</h4>
+          <p>Spend 30 minutes understanding one thing you got wrong. Read the relevant section of DDIA, a blog post, or watch a video. Build the mental model from first principles.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-body">
+          <h4>Spaced repetition</h4>
+          <p>Revisit each system 1 week later and 1 month later. Can you reproduce the design in 15 minutes? True mastery = fast retrieval, not recognition.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Real Engineering Blog Reading Strategy</h3>
+    <p>Read engineering blogs — but read them analytically, not passively:</p>
+    <ul class="styled">
+      <li><strong>Before reading:</strong> "What problem is this company solving? What's their scale?"</li>
+      <li><strong>During reading:</strong> "What trade-off did they make? What alternatives did they consider? What surprised me?"</li>
+      <li><strong>After reading:</strong> Write 3 bullet points from memory. If you can't, you didn't absorb it.</li>
+    </ul>
+    <div class="callout tip">
+      <strong>Top Blogs to Follow</strong>
+      Netflix Tech Blog (streaming, chaos engineering), Discord Engineering (WebSocket at scale), Airbnb Engineering (distributed systems), Cloudflare Blog (networking/CDN), Martin Fowler (patterns), High Scalability (curated case studies).
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- S16 — TOOLING -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="section" id="s16">
+  <div class="section-meta"><span class="section-num">16</span><h2>Tooling Ecosystem</h2></div>
+  <p class="section-desc">Know the landscape. In real systems and interviews, naming the right tools (and knowing why) demonstrates production experience.</p>
+
+  <div class="sub">
+    <h3>Diagramming & Design</h3>
+    <div class="tool-grid">
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">✏️</div>
+          <div><div class="tool-name">Excalidraw</div><div class="tool-cat">Diagramming</div></div>
+        </div>
+        <div class="tool-desc">Free, open-source whiteboard with hand-drawn aesthetic. Best for quick architecture diagrams. Collaboration built-in. Ideal for system design interviews.</div>
+        <div class="tool-link"><a href="https://excalidraw.com">excalidraw.com</a> — free, no signup</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🔷</div>
+          <div><div class="tool-name">draw.io / diagrams.net</div><div class="tool-cat">Diagramming</div></div>
+        </div>
+        <div class="tool-desc">Feature-rich free diagramming. AWS/GCP/Azure icon packs included. Integrates with Confluence, Google Drive. Professional look for documentation.</div>
+        <div class="tool-link"><a href="https://app.diagrams.net">app.diagrams.net</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🎨</div>
+          <div><div class="tool-name">Figma / FigJam</div><div class="tool-cat">Whiteboard</div></div>
+        </div>
+        <div class="tool-desc">FigJam for collaborative whiteboarding. Sticky notes, connectors, vote stickers. Used for design sprints and team architecture reviews. Free tier available.</div>
+        <div class="tool-link"><a href="https://figma.com">figma.com</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🏗️</div>
+          <div><div class="tool-name">Miro</div><div class="tool-cat">Whiteboard</div></div>
+        </div>
+        <div class="tool-desc">Enterprise-grade collaborative board. Architecture templates, flowcharts, user story maps. Best for team workshops. Free tier limited to 3 boards.</div>
+        <div class="tool-link"><a href="https://miro.com">miro.com</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Databases & Storage</h3>
+    <div class="tool-grid">
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🐘</div>
+          <div><div class="tool-name">PostgreSQL</div><div class="tool-cat">Relational DB</div></div>
+        </div>
+        <div class="tool-desc">Most advanced open-source RDBMS. JSONB support, full-text search, window functions, advanced indexing. Default choice for relational data. Scales to tens of TB.</div>
+        <div class="tool-link"><a href="https://postgresql.org">postgresql.org</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🍃</div>
+          <div><div class="tool-name">MongoDB</div><div class="tool-cat">Document DB</div></div>
+        </div>
+        <div class="tool-desc">Leading document database. Flexible schemas, Atlas cloud service, built-in replication and sharding. ACID transactions in v4.0+. Great for content/catalog apps.</div>
+        <div class="tool-link"><a href="https://mongodb.com">mongodb.com</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🔴</div>
+          <div><div class="tool-name">Redis</div><div class="tool-cat">In-Memory / Cache</div></div>
+        </div>
+        <div class="tool-desc">The Swiss Army knife of system design. Cache, session store, pub/sub, rate limiter, geospatial index, leaderboard, queue. Sub-millisecond latency. Redis Cluster for horizontal scaling.</div>
+        <div class="tool-link"><a href="https://redis.io">redis.io</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">⚡</div>
+          <div><div class="tool-name">Cassandra</div><div class="tool-cat">Wide-Column DB</div></div>
+        </div>
+        <div class="tool-desc">Masterless, peer-to-peer. No single point of failure. Handles 1M+ writes/sec. Linear horizontal scaling. Used by Netflix, Instagram, Discord (billions of messages). Partition key selection is critical.</div>
+        <div class="tool-link"><a href="https://cassandra.apache.org">cassandra.apache.org</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🔍</div>
+          <div><div class="tool-name">Elasticsearch</div><div class="tool-cat">Search Engine</div></div>
+        </div>
+        <div class="tool-desc">Distributed search and analytics. Inverted index, relevance scoring (BM25), fuzzy matching, aggregations. ELK stack for logging. Not a primary DB — sync from main DB.</div>
+        <div class="tool-link"><a href="https://elastic.co">elastic.co</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">☁️</div>
+          <div><div class="tool-name">Amazon S3</div><div class="tool-cat">Object Storage</div></div>
+        </div>
+        <div class="tool-desc">Industry-standard object store. 11 nines durability, unlimited scale, lifecycle policies, versioning. Competitors: GCS, Azure Blob, Cloudflare R2 (no egress fees). Default for media storage.</div>
+        <div class="tool-link"><a href="https://aws.amazon.com/s3">aws.amazon.com/s3</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Message Queues & Streaming</h3>
+    <div class="tool-grid">
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">📨</div>
+          <div><div class="tool-name">Apache Kafka</div><div class="tool-cat">Event Streaming</div></div>
+        </div>
+        <div class="tool-desc">The standard for high-throughput event streaming. Persistent, replayable log. Consumer groups, compaction, exactly-once semantics. Confluent Cloud for managed. Used by Uber, Airbnb, LinkedIn.</div>
+        <div class="tool-link"><a href="https://kafka.apache.org">kafka.apache.org</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🐇</div>
+          <div><div class="tool-name">RabbitMQ</div><div class="tool-cat">Message Broker</div></div>
+        </div>
+        <div class="tool-desc">AMQP protocol. Exchange types: direct, fanout, topic, headers. Dead letter queues, priority queues, delayed messages. Best for complex routing and task queues.</div>
+        <div class="tool-link"><a href="https://rabbitmq.com">rabbitmq.com</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">☁️</div>
+          <div><div class="tool-name">Amazon SQS + SNS</div><div class="tool-cat">Managed Queue</div></div>
+        </div>
+        <div class="tool-desc">SQS: managed queue (standard + FIFO). SNS: pub/sub fanout to SQS, Lambda, email, SMS. Perfect for serverless architectures. No infrastructure to manage.</div>
+        <div class="tool-link"><a href="https://aws.amazon.com/sqs">aws.amazon.com/sqs</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Infrastructure & Orchestration</h3>
+    <div class="tool-grid">
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">☸️</div>
+          <div><div class="tool-name">Kubernetes (K8s)</div><div class="tool-cat">Container Orchestration</div></div>
+        </div>
+        <div class="tool-desc">Automates deployment, scaling, and management of containerised apps. Pods, services, deployments, ingress, HPA (auto-scaling). Industry standard for microservices. Managed: EKS, GKE, AKS.</div>
+        <div class="tool-link"><a href="https://kubernetes.io">kubernetes.io</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🐳</div>
+          <div><div class="tool-name">Docker</div><div class="tool-cat">Containerisation</div></div>
+        </div>
+        <div class="tool-desc">Package app + dependencies into portable containers. Consistent environments from dev to prod. Foundation of modern deployment pipelines. Docker Compose for local multi-service development.</div>
+        <div class="tool-link"><a href="https://docker.com">docker.com</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🌿</div>
+          <div><div class="tool-name">Terraform</div><div class="tool-cat">Infrastructure as Code</div></div>
+        </div>
+        <div class="tool-desc">Declarative infra provisioning across AWS, GCP, Azure. Define infrastructure in HCL, version in Git, apply with plan/apply. State management tracks actual vs desired infra.</div>
+        <div class="tool-link"><a href="https://terraform.io">terraform.io</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🔗</div>
+          <div><div class="tool-name">Istio / Envoy</div><div class="tool-cat">Service Mesh</div></div>
+        </div>
+        <div class="tool-desc">Sidecar proxies for every service. Automatic mTLS, circuit breaking, retries, load balancing, distributed tracing — without changing app code. Envoy is the proxy; Istio is the control plane.</div>
+        <div class="tool-link"><a href="https://istio.io">istio.io</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Observability & Monitoring</h3>
+    <div class="tool-grid">
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">📊</div>
+          <div><div class="tool-name">Prometheus + Grafana</div><div class="tool-cat">Metrics & Dashboards</div></div>
+        </div>
+        <div class="tool-desc">Prometheus scrapes metrics endpoints, stores time-series. Grafana visualises with dashboards and alerts. The open-source standard for infrastructure monitoring. PromQL for flexible querying.</div>
+        <div class="tool-link"><a href="https://grafana.com">grafana.com</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🔎</div>
+          <div><div class="tool-name">Jaeger / Zipkin</div><div class="tool-cat">Distributed Tracing</div></div>
+        </div>
+        <div class="tool-desc">Trace requests across microservices. Visualise call graphs, find latency sources. Jaeger (Uber-created, CNCF) and Zipkin (Twitter-created) both use OpenTelemetry standard. Datadog APM for managed.</div>
+        <div class="tool-link"><a href="https://jaegertracing.io">jaegertracing.io</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">📝</div>
+          <div><div class="tool-name">ELK Stack</div><div class="tool-cat">Log Management</div></div>
+        </div>
+        <div class="tool-desc">Elasticsearch + Logstash + Kibana. Ingest, transform, search, and visualise logs. Filebeat for shipping. Managed: Elastic Cloud, AWS OpenSearch. Grafana Loki as lightweight alternative.</div>
+        <div class="tool-link"><a href="https://elastic.co/elk-stack">elastic.co/elk-stack</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🔔</div>
+          <div><div class="tool-name">PagerDuty / OpsGenie</div><div class="tool-cat">Incident Management</div></div>
+        </div>
+        <div class="tool-desc">On-call scheduling, alert routing, escalation policies. Integrates with Prometheus, Datadog, CloudWatch. Reduces alert fatigue with intelligent grouping and suppression.</div>
+        <div class="tool-link"><a href="https://pagerduty.com">pagerduty.com</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>API Gateways & Load Balancers</h3>
+    <div class="tool-grid">
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🦁</div>
+          <div><div class="tool-name">nginx</div><div class="tool-cat">Load Balancer / Proxy</div></div>
+        </div>
+        <div class="tool-desc">High-performance HTTP server and reverse proxy. Load balancing, SSL termination, caching, rate limiting. Powers 40%+ of the web. Lightweight and battle-tested.</div>
+        <div class="tool-link"><a href="https://nginx.org">nginx.org</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">🦅</div>
+          <div><div class="tool-name">Kong / AWS API Gateway</div><div class="tool-cat">API Gateway</div></div>
+        </div>
+        <div class="tool-desc">Kong: open-source, plugin-based (auth, rate limiting, logging, caching). AWS API Gateway: managed, integrates natively with Lambda/ECS. Both handle routing, auth, and transformation.</div>
+        <div class="tool-link"><a href="https://konghq.com">konghq.com</a></div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-header">
+          <div class="tool-icon">⚖️</div>
+          <div><div class="tool-name">HAProxy</div><div class="tool-cat">Load Balancer</div></div>
+        </div>
+        <div class="tool-desc">Extremely performant L4/L7 load balancer. Sub-millisecond overhead. Health checks, sticky sessions, ACLs. Used by GitHub, Reddit. Often outperforms nginx for pure LB workloads.</div>
+        <div class="tool-link"><a href="https://haproxy.org">haproxy.org</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub">
+    <h3>Cloud Providers Quick Reference</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Category</th><th>AWS</th><th>Google Cloud</th><th>Azure</th></tr></thead>
+        <tbody>
+          <tr><td>Compute</td><td>EC2, Lambda, ECS/EKS</td><td>GCE, Cloud Run, GKE</td><td>VMs, Functions, AKS</td></tr>
+          <tr><td>Object Storage</td><td>S3</td><td>Cloud Storage</td><td>Blob Storage</td></tr>
+          <tr><td>Relational DB</td><td>RDS, Aurora</td><td>Cloud SQL, Spanner</td><td>Azure SQL, CosmosDB</td></tr>
+          <tr><td>NoSQL / Cache</td><td>DynamoDB, ElastiCache</td><td>Firestore, Memorystore</td><td>CosmosDB, Cache for Redis</td></tr>
+          <tr><td>Queue / Streaming</td><td>SQS, Kinesis, MSK</td><td>Pub/Sub, Dataflow</td><td>Service Bus, Event Hubs</td></tr>
+          <tr><td>CDN</td><td>CloudFront</td><td>Cloud CDN</td><td>Azure CDN</td></tr>
+          <tr><td>Load Balancer</td><td>ALB / NLB</td><td>Cloud Load Balancing</td><td>Application Gateway</td></tr>
+          <tr><td>Search</td><td>OpenSearch Service</td><td>Vertex AI Search</td><td>Azure Cognitive Search</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!-- REFERENCES -->
+<!-- ══════════════════════════════════════════════════════ -->
+<section class="refs" id="refs">
+  <h2>References & Resources</h2>
+  <div class="ref-grid">
+    <div class="ref-card">
+      <div class="ref-type">📖 Book — Essential</div>
+      <h4>Designing Data-Intensive Applications</h4>
+      <p>Martin Kleppmann (O'Reilly, 2017). The definitive resource. Deep dives on storage engines, replication, consistency, and stream processing. Read once, reference forever.</p>
+      <a href="https://dataintensive.net">dataintensive.net →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">📖 Book — Interview</div>
+      <h4>System Design Interview Vol. 1 & 2</h4>
+      <p>Alex Xu. Vol 1 covers 16 systems; Vol 2 covers 13 more complex ones. Step-by-step with diagrams. Best book for interview preparation.</p>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">📖 Book — Patterns</div>
+      <h4>Building Microservices (2nd Ed)</h4>
+      <p>Sam Newman (O'Reilly). Comprehensive guide to microservice patterns: decomposition, communication, data management, observability.</p>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">🎬 YouTube</div>
+      <h4>ByteByteGo</h4>
+      <p>Alex Xu's channel. Animated explainers of system design concepts and architecture patterns. Free, high quality, beginner-friendly.</p>
+      <a href="https://youtube.com/@ByteByteGo">youtube.com/@ByteByteGo →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">🎬 YouTube</div>
+      <h4>Gaurav Sen</h4>
+      <p>Deep conceptual explanations. Especially good for consistent hashing, messaging systems, and distributed system fundamentals.</p>
+      <a href="https://youtube.com/@gkcs">youtube.com/@gkcs →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">🎬 YouTube</div>
+      <h4>Hussein Nasser</h4>
+      <p>Backend engineering, database internals, proxy servers, networking. Very practical and hands-on. Covers HTTP/2, gRPC, WebSocket deeply.</p>
+      <a href="https://youtube.com/@hnasr">youtube.com/@hnasr →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">📚 Course</div>
+      <h4>Grokking System Design — Educative</h4>
+      <p>Structured course with 20+ systems, interactive diagrams, and design considerations. Good for structured learners.</p>
+      <a href="https://educative.io/courses/grokking-the-system-design-interview">educative.io →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">🌐 GitHub Repo</div>
+      <h4>System Design Primer</h4>
+      <p>Donne Martin's massive open-source resource. 270k+ stars. Covers everything with diagrams, Anki flashcards, and coding problems.</p>
+      <a href="https://github.com/donnemartin/system-design-primer">github.com/donnemartin →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">🌐 Website</div>
+      <h4>High Scalability Blog</h4>
+      <p>Real-world architecture breakdowns of how companies (Pinterest, Twitter, Netflix) built and scaled their systems.</p>
+      <a href="http://highscalability.com">highscalability.com →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">📰 Newsletter</div>
+      <h4>ByteByteGo Newsletter</h4>
+      <p>Weekly system design posts. Covers new topics not in the book. Excellent diagrams. Free tier available.</p>
+      <a href="https://blog.bytebytego.com">blog.bytebytego.com →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">📄 Paper</div>
+      <h4>Amazon Dynamo (2007)</h4>
+      <p>Foundational paper on highly available key-value storage. Introduced consistent hashing + vector clocks. Basis for Cassandra and DynamoDB.</p>
+      <a href="https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf">allthingsdistributed.com →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">📄 Paper</div>
+      <h4>Google Bigtable (2006)</h4>
+      <p>Describes the wide-column storage system behind Google's web indexing. Foundation for HBase and Cassandra's data model.</p>
+      <a href="https://research.google/pubs/bigtable-a-distributed-storage-system-for-structured-data/">research.google →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">📄 Paper</div>
+      <h4>Raft Consensus Algorithm</h4>
+      <p>Understandable consensus. Diego Ongaro & Ousterhout, 2014. Powers etcd (Kubernetes backbone), CockroachDB, TiKV. More readable than Paxos.</p>
+      <a href="https://raft.github.io/raft.pdf">raft.github.io →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">📄 Paper</div>
+      <h4>Google Spanner (2012)</h4>
+      <p>Globally distributed SQL database with external consistency. Uses TrueTime (GPS/atomic clocks) to achieve linearisability at global scale.</p>
+      <a href="https://research.google/pubs/spanner-googles-globally-distributed-database/">research.google →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">🌐 Blog</div>
+      <h4>Netflix Tech Blog</h4>
+      <p>Chaos engineering, streaming at scale, microservices patterns, Hystrix. Essential reading for resilience and large-scale system design.</p>
+      <a href="https://netflixtechblog.com">netflixtechblog.com →</a>
+    </div>
+    <div class="ref-card">
+      <div class="ref-type">🌐 Blog</div>
+      <h4>Discord Engineering Blog</h4>
+      <p>WebSocket at millions of concurrent connections, migrating from Cassandra to ScyllaDB, storing billions of messages. Excellent case studies.</p>
+      <a href="https://discord.com/blog/engineering">discord.com/blog →</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  System Design Comprehensive Study Notes &nbsp;·&nbsp; 16 Sections · 50+ Concepts · 30+ Tools &nbsp;·&nbsp; For personal study use
+</footer>
+
+<script>
+// Reading progress bar
+window.addEventListener('scroll', () => {
+  const total = document.body.scrollHeight - window.innerHeight;
+  const progress = (window.scrollY / total) * 100;
+  document.getElementById('progress-bar').style.width = progress + '%';
+});
+</script>
+
+</body>
+</html>
