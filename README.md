@@ -39,7 +39,7 @@ Open `index.html` from the repository root in a browser.
 Run a local static server from the repository root:
 
 ```bash
-cd /path/to/SystemDesign
+cd path/to/SystemDesign
 python3 -m http.server 8000
 ```
 
