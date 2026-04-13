@@ -33,13 +33,13 @@ The concise guide (`index.html`) provides a focused version of the most importan
 ## How to Use
 
 ### Option 1: Open directly
-Open `/home/runner/work/SystemDesign/SystemDesign/index.html` in a browser.
+Open `index.html` from the repository root in a browser.
 
 ### Option 2: Serve locally (recommended)
 Run a local static server from the repository root:
 
 ```bash
-cd /home/runner/work/SystemDesign/SystemDesign
+cd /path/to/SystemDesign
 python3 -m http.server 8000
 ```
 
@@ -78,4 +78,3 @@ If you update content:
 - Keep explanations practical and trade-off driven.
 - Maintain section structure and readability.
 - Prefer concise language and clear examples.
-
